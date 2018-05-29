@@ -1,0 +1,431 @@
+[[items]]
+name = "Amazon S3"
+type = "activity"
+description = "Activities for interacting with Amazon Simple Storage Service (S3)."
+url = "https://github.com/retgits/flogo-components/tree/master/activity/amazons3"
+uploadedon = "May 2, 2018"
+author = "retgits"
+showcase = "true"
+
+[[items]]
+name = "Amazon SSM"
+type = "activity"
+description = "Activities for interacting with the parameter store of Amazon Simple Systems Manager (SSM)."
+url = "https://github.com/retgits/flogo-components/tree/master/activity/amazonssm"
+uploadedon = "May 2, 2018"
+author = "retgits"
+showcase = "true"
+
+[[items]]
+name = "GNU Zip"
+type = "activity"
+description = "Activities for reading and writing of gzip format compressed files."
+url = "https://github.com/retgits/flogo-components/tree/master/activity/gzip"
+uploadedon = "May 2, 2018"
+author = "retgits"
+showcase = "true"
+
+[[items]]
+name = "Send Message Azure IOT"
+type = "activity"
+description = "Activity for sending data to Azure IOT Hub"
+url = "https://github.com/pradyuz3rocool/flogo-workspace/tree/master/activity/sendazureiot"
+uploadedon = "May 18, 2018"
+author = "iSteerApps"
+showcase = "true"
+
+[[items]]
+name = "Parse CSV"
+type = "activity"
+description = "Parses a CSV string and produces an array of objects."
+url = "https://github.com/mellistibco/flogo-activities/tree/master/activities/parsecsv"
+uploadedon = "April 5, 2018"
+author = "mellistibco"
+showcase = "true"
+
+[[items]]
+name = "DynamoDB Insert"
+type = "activity"
+description = "Inserts a record in an Amazon DynamoDB."
+url = "https://github.com/retgits/flogo-components/tree/master/activity/dynamodbinsert"
+uploadedon = "February 28, 2018"
+author = "retgits"
+showcase = "true"
+
+[[items]]
+name = "DynamoDB Query"
+type = "activity"
+description = "Executes a query against an Amazon DynamoDB."
+url = "https://github.com/retgits/flogo-components/tree/master/activity/dynamodbquery"
+uploadedon = "February 28, 2018"
+author = "retgits"
+showcase = "true"
+
+[[items]]
+name = "Azure IoT Hub"
+type = "activity"
+description = "Provides your Flogo app the ability to perform CRUD operations for device management on  the Azure Iot Hub"
+url = "https://github.com/pradyuz3rocool/flogo-workspace/tree/master/activity/azureiot"
+uploadedon = "April 17, 2018"
+author = "iSteerApps"
+showcase = "true"
+    
+[[items]]
+name = "JavaScript Activity"
+type = "activity"
+description = "This activity provides your Flogo application the ability to execute embedded JavaScript code."
+url = "https://github.com/vijaynalawade/flogo/tree/master/activity/js"
+uploadedon = "February 25, 2018"
+author = "vijaynalawade"
+showcase = "true"
+
+[[items]]
+name = "Riff Trigger"
+type = "trigger"
+description = "This trigger provides your Flogo application the ability to start a flow as a Riff(https://projectriff.io/) function."
+url = "https://github.com/vijaynalawade/flogo/tree/master/trigger/riff"
+uploadedon = "April 27, 2018"
+author = "vijaynalawade"
+showcase = "true"
+
+[[items]]
+name = "Payment Service"
+type = "app"
+description = "A sample application demonstrating environment variables, custom activities and mappings"
+url = "https://github.com/retgits/flogo-components/tree/master/apps/paymentservice"
+uploadedon = "February 20, 2018"
+author = "retgits"
+showcase = "true"
+
+[[items]]
+name = "Invoice Service"
+type = "app"
+description = "A sample application demonstrating environment variables, custom activities, mappings and REST invocations."
+url = "https://github.com/retgits/flogo-components/tree/master/apps/invoiceservice"
+uploadedon = "February 20, 2018"
+author = "retgits"
+showcase = "true"
+
+[[items]]
+name = "Add to Date"
+type = "activity"
+description = "Adds a specified number of units (days, months or years) to a date."
+url = "https://github.com/retgits/flogo-components/tree/master/activity/addtodate"
+uploadedon = "February 20, 2018"
+author = "retgits"
+showcase = "true"
+
+[[items]]
+name = "Random Number"
+type = "activity"
+description = "Generate a random unique number between the min and max value."
+url = "https://github.com/retgits/flogo-components/tree/master/activity/randomnumber"
+uploadedon = "February 20, 2018"
+author = "retgits"
+showcase = "true"
+
+[[items]]
+name = "Random String"
+type = "activity"
+description = "Generate a random string consisting with the length you specify."
+url = "https://github.com/retgits/flogo-components/tree/master/activity/randomstring"
+uploadedon = "February 20, 2018"
+author = "retgits"
+showcase = "true"
+
+[[items]]
+name = "Aggregate"
+type = "activity"
+description = "This activity provides your flogo application with rudimentary aggregation capabilities."
+url = "https://github.com/TIBCOSoftware/flogo-contrib/tree/master/activity/aggregate"
+uploadedon = "January 8, 2018"
+author = "TIBCOSoftware"
+showcase = "true"
+
+[[items]]
+name = "Activity Reply"
+type = "activity"
+description = "This activity provides your flogo action/flow the ability to reply to a trigger invocation and set output values."
+url = "https://github.com/TIBCOSoftware/flogo-contrib/tree/master/activity/actreply"
+uploadedon = "December 20, 2017"
+author = "TIBCOSoftware"
+showcase = "true"
+
+[[items]]
+name = "Activity Return"
+type = "activity"
+description = "This activity provides your flogo action/flow the ability to return immediately and set output values."
+url = "https://github.com/TIBCOSoftware/flogo-contrib/tree/master/activity/actreturn"
+uploadedon = "December 20, 2017"
+author = "TIBCOSoftware"
+showcase = "true"
+
+[[items]]
+name = "AWS IoT Device Shadow"
+type = "activity"
+description = "This activity provides your Flogo application the ability to update a device shadow on AWS IoT."
+url = "https://github.com/TIBCOSoftware/flogo-contrib/tree/master/activity/awsiot"
+uploadedon = "December 20, 2017"
+author = "TIBCOSoftware"
+showcase = "true"
+
+[[items]]
+name = "CLI Trigger"
+type = "trigger"
+description = "This trigger enables you to execute a Flogo Flow via the command line. The Flow will execute till completion and return the results to STDOUT."
+url = "https://github.com/TIBCOSoftware/flogo-contrib/tree/master/trigger/cli"
+uploadedon = "December 20, 2017"
+author = "TIBCOSoftware"
+showcase = "true"
+
+[[items]]
+name = "CoAP Publish"
+type = "activity"
+description = "This activity provides your flogo application the ability to send CoAP messages."
+url = "https://github.com/TIBCOSoftware/flogo-contrib/tree/master/activity/coap"
+uploadedon = "December 20, 2017"
+author = "TIBCOSoftware"
+showcase = "true"
+
+[[items]]
+name = "CoAP Trigger"
+type = "trigger"
+description = "This trigger provides your Flogo application the ability to start a flow via CoAP."
+url = "https://github.com/TIBCOSoftware/flogo-contrib/tree/master/trigger/coap"
+uploadedon = "December 20, 2017"
+author = "TIBCOSoftware"
+showcase = "true"
+
+[[items]]
+name = "MQTT Trigger"
+type = "trigger"
+description = "This trigger provides your Flogo application the ability to start a flow via MQTT."
+url = "https://github.com/TIBCOSoftware/flogo-contrib/tree/master/trigger/mqtt"
+uploadedon = "December 20, 2017"
+author = "TIBCOSoftware"
+showcase = "true"
+
+[[items]]
+name = "Couchbase"
+type = "activity"
+description = "This activity provides your Flogo application the ability to connect to a Couchbase server."
+url = "https://github.com/TIBCOSoftware/flogo-contrib/tree/master/activity/couchbase"
+uploadedon = "December 20, 2017"
+author = "teivah"
+showcase = "true"
+
+[[items]]
+name = "GPIO"
+type = "activity"
+description = "This activity provides your Flogo application the ability to control the Raspberry Pi GPIO interface."
+url = "https://github.com/TIBCOSoftware/flogo-contrib/tree/master/activity/gpio"
+uploadedon = "December 20, 2017"
+author = "TIBCOSoftware"
+showcase = "true"
+
+[[items]]
+name = "ML Inference"
+type = "activity"
+description = "This activity provides your Flogo application the ability to inference ML models. Currently supporting TensorFlow."
+url = "https://github.com/TIBCOSoftware/flogo-contrib/tree/master/activity/inference"
+uploadedon = "December 20, 2017"
+author = "TIBCOSoftware"
+showcase = "true"
+
+[[items]]
+name = "Kafka Publish"
+type = "activity"
+description = "This activity provides your Flogo application the ability to publish Kafka messages."
+url = "https://github.com/TIBCOSoftware/flogo-contrib/tree/master/activity/kafkapub"
+uploadedon = "December 20, 2017"
+author = "TIBCOSoftware"
+showcase = "true"
+
+[[items]]
+name = "Kafka Subscribe"
+type = "trigger"
+description = "This trigger provides your Flogo application with the ability to subscribe to messages from a kafka cluster and start a flow with the contents of the message."
+url = "https://github.com/TIBCOSoftware/flogo-contrib/tree/master/trigger/kafkasub"
+uploadedon = "December 20, 2017"
+author = "TIBCOSoftware"
+showcase = "true"
+
+[[items]]
+name = "AWS Lambda Trigger"
+type = "trigger"
+description = "This trigger provides your Flogo application the ability to start a flow as an AWS Lambda function."
+url = "https://github.com/TIBCOSoftware/flogo-contrib/tree/master/trigger/lambda"
+uploadedon = "December 20, 2017"
+author = "TIBCOSoftware"
+showcase = "true"
+
+[[items]]
+name = "AWS Lambda Invoke"
+type = "activity"
+description = "This activity provides native Lambda invocation capabilities to your Flogo apps. You can invoke a Lambda function via ARN and provide the access key and secret for authentication."
+url = "https://github.com/TIBCOSoftware/flogo-contrib/tree/master/activity/lambda"
+uploadedon = "December 20, 2017"
+author = "TIBCOSoftware"
+showcase = "true"
+
+[[items]]
+name = "REST Trigger"
+type = "trigger"
+description = "This trigger provides your Flogo application the ability to start a flow via REST over HTTP."
+url = "https://github.com/TIBCOSoftware/flogo-contrib/tree/master/trigger/rest"
+uploadedon = "December 20, 2017"
+author = "TIBCOSoftware"
+showcase = "true"
+
+[[items]]
+name = "REST"
+type = "activity"
+description = "This activity provides your Flogo application the ability to invoke REST services."
+url = "https://github.com/TIBCOSoftware/flogo-contrib/tree/master/activity/rest"
+uploadedon = "December 20, 2017"
+author = "TIBCOSoftware"
+showcase = "true"
+
+[[items]]
+name = "Twilio"
+type = "activity"
+description = "This activity provides your Flogo application the ability to send a SMS via Twilio."
+url = "https://github.com/TIBCOSoftware/flogo-contrib/tree/master/activity/twilio"
+uploadedon = "December 20, 2017"
+author = "TIBCOSoftware"
+showcase = "true"
+
+[[items]]
+name = "Send WebSocket Message"
+type = "activity"
+description = "This activity provides your Flogo application the ability to send messages to a WebSocket server."
+url = "https://github.com/TIBCOSoftware/flogo-contrib/tree/master/activity/wsmessage"
+uploadedon = "December 20, 2017"
+author = "TIBCOSoftware"
+showcase = "true"
+
+[[items]]
+name = "eFTL Publish"
+type = "activity"
+description = "This activity sends a message to TIBCO eFTL. Code is based on the WSMessage activity created by Leon Stigter."
+url = "https://github.com/jvanderl/flogo-components/tree/master/activity/eftl"
+uploadedon = "December 19, 2017"
+author = "jvanderl"
+showcase = "true"
+
+[[items]]
+name = "eFTL Subscriber"
+type = "trigger"
+description = "This trigger provides your flogo application the ability to start a flow via eFTL."
+url = "https://github.com/jvanderl/flogo-components/tree/master/trigger/eftl"
+uploadedon = "December 19, 2017"
+author = "jvanderl"
+showcase = "true"
+
+[[items]]
+name = "Timer Trigger"
+type = "trigger"
+description = "This trigger provides your Flogo application the ability to schedule a flow via a scheduling service."
+url = "https://github.com/TIBCOSoftware/flogo-contrib/tree/master/trigger/timer"
+uploadedon = "December 20, 2017"
+author = "TIBCOSoftware"
+showcase = "true"
+
+[[items]]
+name = "Get Book Information"
+type = "app"
+description = "A sample application demonstrating multi trigger flows, mappings and REST invocations."
+url = "https://github.com/TIBCOSoftware/flogo/tree/master/samples/getbooksample"
+uploadedon = "December 20, 2017"
+author = "TIBCOSoftware"
+showcase = "true"
+
+[[items]]
+name = "GrovePi"
+type = "activity"
+description = "allows Digital Write to GrovePi Board from Raspberry Pi."
+url = "https://github.com/JGrotex/GrovePi/tree/master/Software/flogo"
+uploadedon = "March 22, 2018"
+author = "jgrote"
+showcase = "true"
+
+[[items]]
+name = "JSON Config Reader"
+type = "activity"
+description = "This activity reads configuration from a JSON file."
+url = "https://github.com/philippegabert/configreader/tree/master/flogo-contrib/activity/configreader"
+uploadedon = "Jan 31, 2018"
+author = "philippegabert"
+showcase = "true"
+
+[[items]]
+name = "TensorFlow HelloWorld"
+type = "app"
+description = "Basic sample demonstrating how to inference a TensorFlow model."
+url = "https://github.com/TIBCOSoftware/flogo/tree/master/samples/tensorflow/helloworld"
+uploadedon = "Feb 6, 2018"
+author = "TIBCOSoftware"
+showcase = "true"
+
+[[items]]
+name = "MySQL Fetch"
+type = "activity"
+description = "This activity provides your flogo application the ability to fire a select query to mySQL database and fetch the required data returning it as a JSON string."
+url = "https://github.com/Ganitagya/flogo-contrib/tree/master/activity/mysqlfetch"
+uploadedon = "April 3, 2018"
+author = "Ganitagya"
+showcase = "true"
+
+[[items]]
+name = "UDP Subscriber Trigger"
+type = "trigger"
+description = "This trigger provides your flogo application a stream of UDP data from the specificed port and, optionally, Multicast group"
+url = "https://github.com/ayh20/flogo-components/tree/master/trigger/udp"
+uploadedon = "April 18, 2018"
+author = "ayh20"
+showcase = "true"
+
+[[items]]
+name = "UDP Receive activity"
+type = "activity"
+description = "This activity provides your flogo application the ability to send a message over UDP"
+url = "https://github.com/jvanderl/flogo-components/tree/master/activity/udp"
+uploadedon = "April 18, 2018"
+author = "jvanderl"
+showcase = "true"
+
+[[items]]
+name = "Redis activity"
+type = "activity"
+description = "Activity for interacting with Redis DB."
+url = "https://github.com/mmussett/flogo-components/tree/master/activity/redis"
+uploadedon = "May 11, 2018"
+author = "mmussett"
+showcase = "true"
+
+[[items]]
+name = "Statsd activity"
+type = "activity"
+description = "Activity for publishing statsd events."
+url = "https://github.com/mmussett/flogo-components/tree/master/activity/statsd"
+uploadedon = "May 11, 2018"
+author = "mmussett"
+showcase = "true"
+
+[[items]]
+name = "EMS activity"
+type = "activity"
+description = "Activity for sending and receiving EMS messages."
+url = "https://github.com/mmussett/flogo-components/tree/master/activity/ems"
+uploadedon = "May 11, 2018"
+author = "mmussett"
+showcase = "true"
+
+[[items]]
+name = "Env activity"
+type = "activity"
+description = "Activity for getting and setting Environment Variables."
+url = "https://github.com/mmussett/flogo-components/tree/master/activity/env"
+uploadedon = "May 11, 2018"
+author = "mmussett"
+showcase = "true"
