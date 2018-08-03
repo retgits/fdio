@@ -19,10 +19,11 @@ import (
 )
 
 const (
-	githubRootEndpoint        string = "https://api.github.com"
-	githubSearchEndpoint      string = "/search/code"
-	githubActivitySearchQuery string = "sort=indexed&order=desc&q=filename%3Aactivity.json+flogo"
-	githubTriggerSearchQuery  string = "sort=indexed&order=desc&q=filename%3Atrigger.json+flogo"
+	githubRootEndpoint        = "https://api.github.com"
+	githubSearchEndpoint      = "/search/code"
+	githubActivitySearchQuery = "sort=indexed&order=desc&q=filename%3Aactivity.json+flogo"
+	githubTriggerSearchQuery  = "sort=indexed&order=desc&q=filename%3Atrigger.json+flogo"
+	version                   = "0.0.2"
 )
 
 // executeRequest executes an HTTP request
@@ -96,7 +97,7 @@ func Crawl(httpHeader http.Header, db *database.Database, timeout float64, contr
 		idx := strings.Index(lastURL, "/tree")
 		update, err := checkLastUpdate(lastURL[:idx])
 		if err != nil {
-			return err
+			log.Print(err.Error())
 		}
 		// If update is larger than timeout it means the last update to the last checked
 		// repository was longer than the timeout we set. In that case we don't need to
@@ -152,7 +153,7 @@ func Crawl(httpHeader http.Header, db *database.Database, timeout float64, contr
 			idx := strings.Index(lastURL, "/tree")
 			update, err := checkLastUpdate(lastURL[:idx])
 			if err != nil {
-				return err
+				log.Print(err.Error())
 			}
 			// If update is larger than timeout it means the last update to the last checked
 			// repository was longer than the timeout we set. In that case we don't need to
