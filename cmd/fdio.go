@@ -40,4 +40,5 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().StringVar(&dbFile, "db", "", "The path to the database (required)")
 	rootCmd.MarkPersistentFlagRequired("db")
+	rootCmd.Version = version
 }

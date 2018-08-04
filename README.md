@@ -39,11 +39,11 @@ Available Commands:
   init        Initialize the database in a new location
   query       Run a query against the database
   stats       Get statistics from the database
-  version     Displays the version
 
 Flags:
       --db string   The path to the database (required)
   -h, --help        help for fdio
+      --version     version for fdio
 
 Use "fdio [command] --help" for more information about a command.
 ```
@@ -137,20 +137,6 @@ Usage:
 
 Flags:
   -h, --help   help for stats
-
-Global Flags:
-      --db string   The path to the database (required)
-```
-
-### Version
-```
-Displays the version
-
-Usage:
-  fdio version [flags]
-
-Flags:
-  -h, --help   help for version
 
 Global Flags:
       --db string   The path to the database (required)
