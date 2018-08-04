@@ -69,7 +69,7 @@ func (db *Database) reinit() error {
 	defer dbase.Close()
 
 	// Create the new table
-	_, err = dbase.Exec("create table acts (id text not null primary key, name text, type text, description text, url text, uploadedon text, author text, showcase text)")
+	_, err = dbase.Exec("create table acts (ref text not null primary key, name text, type text, description text, url text, uploadedon text, author text, showcase text)")
 	if err != nil {
 		return fmt.Errorf("error while creating table: %s", err.Error())
 	}
@@ -95,7 +95,7 @@ func (db *Database) InsertActs(items []map[string]interface{}) error {
 	}
 
 	// Create a prepared statement
-	stmt, err := tx.Prepare("insert into acts(id, name, type, description, url, uploadedon, author, showcase) values(?, ?, ?, ?, ?, ?, ?, ?)")
+	stmt, err := tx.Prepare("insert into acts(ref, name, type, description, url, uploadedon, author, showcase) values(?, ?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
 		return fmt.Errorf("error while creating prepared statement: %s", err.Error())
 	}
@@ -104,10 +104,8 @@ func (db *Database) InsertActs(items []map[string]interface{}) error {
 	// Insert items into database
 	for _, item := range items {
 		if item["name"] != nil {
-			tempNameKey := strings.Replace(item["name"].(string), " ", "", -1)
-			tempNameKey = strings.ToLower(tempNameKey)
 
-			key := fmt.Sprintf("%s/%s", item["author"].(string), tempNameKey)
+			key := item["ref"].(string)
 
 			if len(item["uploadedon"].(string)) == 0 {
 				item["uploadedon"] = ""
@@ -119,16 +117,24 @@ func (db *Database) InsertActs(items []map[string]interface{}) error {
 
 			_, err = stmt.Exec(key, item["name"].(string), item["type"].(string), item["description"].(string), item["url"].(string), item["uploadedon"].(string), item["author"].(string), item["showcase"].(string))
 			if err != nil {
-				if strings.Contains(err.Error(), "UNIQUE constraint failed: acts.id") {
+				if strings.Contains(err.Error(), "UNIQUE constraint failed: acts.ref") {
 					log.Printf("Key %s already exists, trying to update\n", key)
-					updateStmt, err := tx.Prepare("update acts set type=?, description=?, url=?, uploadedon=?, showcase=? where id=?")
-					if err != nil {
-						return fmt.Errorf("error while creating update statement: %s", err.Error())
-					}
-					defer updateStmt.Close()
-					_, err = updateStmt.Exec(item["type"].(string), item["description"].(string), item["url"].(string), item["uploadedon"].(string), item["showcase"].(string), key)
-					if err != nil {
-						log.Printf("Error while updating %s: %s\n", key, err.Error())
+					urlComponents := strings.Split(key, "/")
+					// We can only update valid Go packages...
+					if len(urlComponents) > 2 {
+						refToURL := fmt.Sprintf("https://%s/tree/master/%s/", strings.Join(urlComponents[:3], "/"), strings.Join(urlComponents[3:], "/"))
+						// Only perform an update if the ref field matches the URL, otherwise it is a fork and the ref should have been updated
+						if strings.Contains(refToURL, item["url"].(string)) {
+							updateStmt, err := tx.Prepare("update acts set type=?, description=?, url=?, uploadedon=?, showcase=? where ref=?")
+							if err != nil {
+								return fmt.Errorf("error while creating update statement: %s", err.Error())
+							}
+							defer updateStmt.Close()
+							_, err = updateStmt.Exec(item["type"].(string), item["description"].(string), item["url"].(string), item["uploadedon"].(string), item["showcase"].(string), key)
+							if err != nil {
+								log.Printf("Error while updating %s: %s\n", key, err.Error())
+							}
+						}
 					}
 				} else {
 					log.Printf("Error while inserting %s into database: %s\n", key, err.Error())

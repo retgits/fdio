@@ -63,7 +63,7 @@ func runExport(cmd *cobra.Command, args []string) {
 	}
 
 	// Query the database
-	_, rows, err := db.DoQuery("select id, name, type, description, url, uploadedon, author, showcase from acts")
+	_, rows, err := db.DoQuery("select ref, name, type, description, url, uploadedon, author, showcase from acts")
 
 	// Loop over the result
 	for _, row := range rows {

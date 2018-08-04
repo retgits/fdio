@@ -12,7 +12,7 @@ import (
 var (
 	newDBname       = "../test/test.dbx"
 	populatedDBname = "../test/test-populated.dbx"
-	queries         = []string{"select id, name from acts where id=\"retgits/dynamodbquery\"", "select * from acts where author = \"retgits\"", "select id, count(*) from acts where author=\"retgits\""}
+	queries         = []string{"select * from acts where author = \"retgits\"", "select ref, count(*) from acts where author=\"retgits\""}
 	statsQueries    = []string{"select author, count(author) as num from acts group by author order by num desc limit 5", "select type, count(type) as num from acts group by type"}
 )
 

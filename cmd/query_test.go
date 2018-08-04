@@ -66,7 +66,7 @@ func TestQueryWithQuery(t *testing.T) {
 
 	var outbuf, errbuf bytes.Buffer
 
-	queries := []string{"select id, name from acts where id=\"retgits/randomstring\"", "select * from acts where author = \"retgits\"", "select id, count(*) from acts where author=\"retgits\""}
+	queries := []string{"select * from acts where author = \"retgits\"", "select ref, count(*) from acts where author=\"retgits\""}
 
 	// db and query flags set
 	for _, query := range queries {

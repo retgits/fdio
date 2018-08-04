@@ -23,7 +23,6 @@ const (
 	githubSearchEndpoint      = "/search/code"
 	githubActivitySearchQuery = "sort=indexed&order=desc&q=filename%3Aactivity.json+flogo"
 	githubTriggerSearchQuery  = "sort=indexed&order=desc&q=filename%3Atrigger.json+flogo"
-	version                   = "0.0.2"
 )
 
 // executeRequest executes an HTTP request
@@ -133,6 +132,11 @@ func Crawl(httpHeader http.Header, db *database.Database, timeout float64, contr
 		byteArray := []byte(response.Body)
 		if err = json.Unmarshal(byteArray, &responseBody); err != nil {
 			return err
+		}
+
+		// DEBUG
+		if responseBody["items"] == nil {
+			log.Printf(">>>>>>>>>>\n\n%s\n\n>>>>>>>>>>", responseBody)
 		}
 
 		// Collect the items in this set
@@ -248,8 +252,9 @@ func prepareItems(items []interface{}) ([]map[string]interface{}, error) {
 				responseBody["description"] = ""
 			}
 
-			if responseBody["name"] != nil {
+			if responseBody["name"] != nil && responseBody["ref"] != nil {
 				tempMap := make(map[string]interface{})
+				tempMap["ref"] = responseBody["ref"].(string)
 				tempMap["name"] = responseBody["name"].(string)
 				tempMap["type"] = projectType
 				tempMap["description"] = responseBody["description"].(string)
@@ -258,11 +263,8 @@ func prepareItems(items []interface{}) ([]map[string]interface{}, error) {
 				tempMap["author"] = responseBody["author"].(string)
 				tempMap["showcase"] = ""
 				datamap[idx] = tempMap
-				// For debug
-				tempNameKey := strings.Replace(tempMap["name"].(string), " ", "", -1)
-				tempNameKey = strings.ToLower(tempNameKey)
-				tempKey := fmt.Sprintf("%s/%s", tempMap["author"].(string), tempNameKey)
-				log.Printf("Added %s to the list", tempKey)
+			} else {
+				log.Printf("%s has no name or ref field so cannot be added to FDIO", fmt.Sprintf("https://github.com/%s/tree/master/%s", repository["full_name"].(string), projectPath))
 			}
 		}
 	}
