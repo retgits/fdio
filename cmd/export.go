@@ -63,10 +63,16 @@ func runExport(cmd *cobra.Command, args []string) {
 	}
 
 	// Query the database
-	_, rows, err := db.DoQuery("select ref, name, type, description, url, uploadedon, author, showcase from acts")
+	queryOpts := database.QueryOptions{
+		Query: "select ref, name, type, description, url, uploadedon, author, showcase from acts",
+	}
+	response, err := db.RunQuery(queryOpts)
+	if err != nil {
+		log.Fatalf("Error while executing query: %s\n", err.Error())
+	}
 
 	// Loop over the result
-	for _, row := range rows {
+	for _, row := range response.Rows {
 		item := fmt.Sprintf("[[items]]\nname = %s\ntype = %s\ndescription = %s\nurl = %s\nuploadedon = %s\nauthor = %s\nshowcase = %s\n\n", row[1], row[2], row[3], row[4], row[5], row[6], row[7])
 		if _, err = file.WriteString(item); err != nil {
 			log.Fatalf("Error while writing %s to file: %s\n", row[0], err.Error())

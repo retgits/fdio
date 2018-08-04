@@ -4,9 +4,6 @@ A command-line interface for the Flogo Dot IO website. This tool is designed to 
 ## Installing
 There are a few ways to install this project
 
-### Get a binary
-Probably the easiest way to get started is to download a binary from the [releases](https://github.com/retgits/fdio/releases) section
-
 ### Get the sources
 You can get the sources for this project by simply running
 ```bash
@@ -18,7 +15,7 @@ You can create a binary using the `install` command
 $ go install ./...
 ```
 
-## Build from source
+### Build from source
 To build the fdio command-line interface simply run `go build`. This does require your system to have `gcc` installed. To build for Windows, you'll need to have CGO enabled
 ```bash 
 $ GOOS=windows CGO_ENABLED=1 CC="x86_64-w64-mingw32-gcc" go build

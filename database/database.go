@@ -3,26 +3,44 @@ package database
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/olekukonko/tablewriter"
+
 	// The database is sqlite3
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// Database represents the database and implements methods to perform
-// operations on the database.
+// Database represents the database and implements methods to perform operations on the database.
 type Database struct {
 	File string
 }
 
-// New creates a connection to the database. filename represents the exact file location
-// of the database file, create a boolean to indiciate whether to create a new file or
-// not if the filename doesn't exist, and reset a boolean that indicates whether to delete
-// the existing file and create a new one.
+// QueryOptions represents the options you can have for a query and how the result will be rendered
+type QueryOptions struct {
+	Writer     io.Writer
+	Query      string
+	MergeCells bool
+	RowLine    bool
+	Caption    string
+	Render     bool
+}
+
+// QueryResponse represents the response from a query
+type QueryResponse struct {
+	Rows        [][]string
+	ColumnNames []string
+	Table       *tablewriter.Table
+}
+
+// New creates a connection to the database. filename represents the exact file location of the database
+// file, create a boolean to indiciate whether to create a new file or not if the filename doesn't exist,
+// and reset a boolean that indicates whether to delete the existing file and create a new one.
 func New(filename string, create bool, reset bool) (*Database, error) {
 	// Remove database file if requested
 	if reset {
@@ -58,8 +76,8 @@ func New(filename string, create bool, reset bool) (*Database, error) {
 	return db, nil
 }
 
-// reinit creates the table structure needed in the database. This method must be called
-// if you're starting with a brand new database.
+// reinit creates the table structure needed in the database. This method must be called if you're
+// starting with a brand new database.
 func (db *Database) reinit() error {
 	// Open a connection to the database
 	dbase, err := sqlx.Open("sqlite3", db.File)
@@ -77,10 +95,9 @@ func (db *Database) reinit() error {
 	return nil
 }
 
-// InsertActs inserts activities and triggers into the database. The input argument is an
-// array of map[string]interface{} which will be used in the insert statement. Inserts are
-// done in a transaction.
-func (db *Database) InsertActs(items []map[string]interface{}) error {
+// InsertContributions inserts activities and triggers into the database. The input argument is an array of
+// map[string]interface{} which will be used in the insert statement. Inserts are done in a transaction.
+func (db *Database) InsertContributions(items []map[string]interface{}) error {
 	// Open a connection to the database
 	dbase, err := sqlx.Open("sqlite3", db.File)
 	if err != nil {
@@ -103,41 +120,42 @@ func (db *Database) InsertActs(items []map[string]interface{}) error {
 
 	// Insert items into database
 	for _, item := range items {
-		if item["name"] != nil {
+		if item["ref"] != nil {
+			// Get values from the item or assign a default value
+			ref := getValue(item["ref"], "")
+			name := getValue(item["name"], "")
+			contribType := getValue(item["type"], "")
+			url := getValue(item["url"], "")
+			author := getValue(item["author"], "")
+			uploadedOn := getValue(item["uploadedon"], "")
+			showcase := getValue(item["showcase"], "false")
+			description := getValue(item["description"], "")
 
-			key := item["ref"].(string)
-
-			if len(item["uploadedon"].(string)) == 0 {
-				item["uploadedon"] = ""
-			}
-
-			if item["showcase"] == nil || item["showcase"].(string) != "true" {
-				item["showcase"] = "false"
-			}
-
-			_, err = stmt.Exec(key, item["name"].(string), item["type"].(string), item["description"].(string), item["url"].(string), item["uploadedon"].(string), item["author"].(string), item["showcase"].(string))
+			// Execute the prepared statement
+			_, err = stmt.Exec(ref, name, contribType, description, url, uploadedOn, author, showcase)
 			if err != nil {
-				if strings.Contains(err.Error(), "UNIQUE constraint failed: acts.ref") {
-					log.Printf("Key %s already exists, trying to update\n", key)
-					urlComponents := strings.Split(key, "/")
-					// We can only update valid Go packages...
-					if len(urlComponents) > 2 {
-						refToURL := fmt.Sprintf("https://%s/tree/master/%s/", strings.Join(urlComponents[:3], "/"), strings.Join(urlComponents[3:], "/"))
-						// Only perform an update if the ref field matches the URL, otherwise it is a fork and the ref should have been updated
-						if strings.Contains(refToURL, item["url"].(string)) {
-							updateStmt, err := tx.Prepare("update acts set type=?, description=?, url=?, uploadedon=?, showcase=? where ref=?")
-							if err != nil {
-								return fmt.Errorf("error while creating update statement: %s", err.Error())
-							}
-							defer updateStmt.Close()
-							_, err = updateStmt.Exec(item["type"].(string), item["description"].(string), item["url"].(string), item["uploadedon"].(string), item["showcase"].(string), key)
-							if err != nil {
-								log.Printf("Error while updating %s: %s\n", key, err.Error())
-							}
+				// If the ref field already exists in the database, we'll try to update the values assuming the ref field is a valid Go package
+				if strings.Contains(err.Error(), "UNIQUE constraint failed: acts.ref") && len(strings.Split(ref, "/")) > 2 {
+					urlComponents := strings.Split(ref, "/")
+					refToURL := fmt.Sprintf("https://%s/tree/master/%s/", strings.Join(urlComponents[:3], "/"), strings.Join(urlComponents[3:], "/"))
+
+					// Only perform an update if the ref field matches the URL, otherwise it is a fork and the ref should have been updated
+					if strings.Contains(refToURL, url) {
+						// Create another prepared statement
+						updateStmt, err := tx.Prepare("update acts set type=?, description=?, url=?, uploadedon=?, showcase=? where ref=?")
+						if err != nil {
+							return fmt.Errorf("error while creating update statement: %s", err.Error())
+						}
+						defer updateStmt.Close()
+
+						// Execute the update statement
+						_, err = updateStmt.Exec(contribType, description, url, uploadedOn, showcase, ref)
+						if err != nil {
+							log.Printf("Error while updating %s: %s\n", ref, err.Error())
 						}
 					}
 				} else {
-					log.Printf("Error while inserting %s into database: %s\n", key, err.Error())
+					log.Printf("Error while inserting %s into database: %s\n", ref, err.Error())
 				}
 			}
 		}
@@ -149,29 +167,46 @@ func (db *Database) InsertActs(items []map[string]interface{}) error {
 	return nil
 }
 
-// DoQuery executes a query on the database and returns the results
-// []string are the column headers
-// [][]string are the rows with data fields
-func (db *Database) DoQuery(query string) ([]string, [][]string, error) {
+func getValue(value interface{}, fallback string) string {
+	if value == nil {
+		return fallback
+	}
+
+	return value.(string)
+}
+
+// RunQuery run a query on the database and prints the result in a table
+func (db *Database) RunQuery(opts QueryOptions) (QueryResponse, error) {
+	queryResponse := QueryResponse{}
+
 	// Open a connection to the database
 	dbase, err := sqlx.Open("sqlite3", db.File)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error while opening connection to database: %s", err.Error())
+		return queryResponse, fmt.Errorf("error while opening connection to database: %s", err.Error())
 	}
 	defer dbase.Close()
 
 	// Execute the query
-	rows, err := dbase.Queryx(query)
+	rows, err := dbase.Queryx(opts.Query)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error while executing query: %s", err.Error())
+		return queryResponse, fmt.Errorf("error while executing query: %s", err.Error())
 	}
 	defer rows.Close()
 
-	// Prepare a result array
-	var resultArray [][]string
-
 	// Get the column names
 	colnames, _ := rows.Columns()
+
+	// Prepare the output table
+	table := tablewriter.NewWriter(opts.Writer)
+	table.SetHeader(colnames)
+	table.SetAutoMergeCells(opts.MergeCells)
+	table.SetRowLine(opts.RowLine)
+	if len(opts.Caption) > 0 {
+		table.SetCaption(true, opts.Caption)
+	}
+
+	// Prepare a result array
+	var resultArray [][]string
 
 	// Loop over the result
 	for rows.Next() {
@@ -189,40 +224,18 @@ func (db *Database) DoQuery(query string) ([]string, [][]string, error) {
 				tempStringArray[idx] = string(v.([]uint8))
 			}
 		}
+		table.Append(tempStringArray)
 		resultArray = append(resultArray, tempStringArray)
 	}
 
-	return colnames, resultArray, nil
-}
-
-// DoStatsQuery executes a stats query on the database and returns the results
-func (db *Database) DoStatsQuery(query string) ([]string, error) {
-	// Open a connection to the database
-	dbase, err := sqlx.Open("sqlite3", db.File)
-	if err != nil {
-		return nil, fmt.Errorf("error while opening connection to database: %s", err.Error())
-	}
-	defer dbase.Close()
-
-	// Execute the query
-	rows, err := dbase.Queryx(query)
-	if err != nil {
-		return nil, fmt.Errorf("error while executing query: %s", err.Error())
-	}
-	defer rows.Close()
-
-	// Prepare a result array
-	var resultArray []string
-
-	// Loop over the resultset
-	for rows.Next() {
-		result := make([]string, 2)
-		err = rows.Scan(&result[0], &result[1])
-		if err != nil {
-			log.Fatal(err)
-		}
-		resultArray = append(resultArray, fmt.Sprintf("%s (%s)", result[0], result[1]))
+	// Print the table
+	if opts.Render {
+		table.Render()
 	}
 
-	return resultArray, nil
+	queryResponse.ColumnNames = colnames
+	queryResponse.Rows = resultArray
+	queryResponse.Table = table
+
+	return queryResponse, nil
 }

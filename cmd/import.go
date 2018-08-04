@@ -7,6 +7,7 @@ import (
 
 	toml "github.com/pelletier/go-toml"
 	"github.com/retgits/fdio/database"
+	"github.com/retgits/fdio/util"
 	"github.com/spf13/cobra"
 )
 
@@ -33,7 +34,7 @@ func runImport(cmd *cobra.Command, args []string) {
 	}
 
 	// Convert the tree to an array of maps
-	arrayMap, err := TomlTreeToMap(config, tomlItemKey)
+	arrayMap, err := util.TomlTreeToMap(config, tomlItemKey)
 	if err != nil {
 		log.Fatalf("Error while converting TOML to array: %s\n", err.Error())
 	}
@@ -45,7 +46,7 @@ func runImport(cmd *cobra.Command, args []string) {
 	}
 
 	// Load the data into the database
-	err = db.InsertActs(arrayMap)
+	err = db.InsertContributions(arrayMap)
 	if err != nil {
 		log.Printf("Error while loading data into the database: %s\n", err.Error())
 	}

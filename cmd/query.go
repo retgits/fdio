@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/olekukonko/tablewriter"
 	"github.com/retgits/fdio/database"
 	"github.com/spf13/cobra"
 )
@@ -38,23 +37,15 @@ func runQuery(cmd *cobra.Command, args []string) {
 		log.Fatalf("Error while connecting to the database: %s\n", err.Error())
 	}
 
-	// Execute the query
-	cols, rows, err := db.DoQuery(query)
+	queryOpts := database.QueryOptions{
+		Writer:     os.Stdout,
+		Query:      query,
+		MergeCells: true,
+		RowLine:    true,
+		Render:     true,
+	}
+	_, err = db.RunQuery(queryOpts)
 	if err != nil {
 		log.Printf("Error while executing query: %s\n", err.Error())
 	}
-
-	// Prepare the output table
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader(cols)
-	table.SetAutoMergeCells(true)
-	table.SetRowLine(true)
-
-	// Loop over the result
-	for _, row := range rows {
-		table.Append(row)
-	}
-
-	// Print the table
-	table.Render()
 }

@@ -1,6 +1,5 @@
-// Package cmd defines and implements command-line commands and flags
-// used by fdio. Commands and flags are implemented using Cobra.
-package cmd
+// Package util provides utility functions for FDIO
+package util
 
 import (
 	"encoding/json"
@@ -12,7 +11,6 @@ import (
 	"time"
 
 	"github.com/nareix/curl"
-	toml "github.com/pelletier/go-toml"
 	"github.com/retgits/fdio/database"
 	"github.com/tomnomnom/linkheader"
 	xmlpath "gopkg.in/xmlpath.v2"
@@ -85,7 +83,7 @@ func Crawl(httpHeader http.Header, db *database.Database, timeout float64, contr
 	}
 
 	// Store them in the database
-	db.InsertActs(arrayMap)
+	db.InsertContributions(arrayMap)
 	if err != nil {
 		return fmt.Errorf("error while loading data into the database: %s", err.Error())
 	}
@@ -134,38 +132,38 @@ func Crawl(httpHeader http.Header, db *database.Database, timeout float64, contr
 			return err
 		}
 
-		// DEBUG
-		if responseBody["items"] == nil {
-			log.Printf(">>>>>>>>>>\n\n%s\n\n>>>>>>>>>>", responseBody)
-		}
-
-		// Collect the items in this set
-		arrayMap, err := prepareItems(responseBody["items"].([]interface{}))
-		if err != nil {
-			return fmt.Errorf("error while converting response to array: %s", err.Error())
-		}
-
-		// Store them in the database
-		db.InsertActs(arrayMap)
-		if err != nil {
-			return fmt.Errorf("error while loading data into the database: %s", err.Error())
-		}
-
-		if timeout != 0 {
-			lastItem := arrayMap[len(arrayMap)-1]
-			lastURL := lastItem["url"].(string)
-			idx := strings.Index(lastURL, "/tree")
-			update, err := checkLastUpdate(lastURL[:idx])
+		// While the response body should never be empty, better to be safe than sorry
+		if responseBody["items"] != nil {
+			// Collect the items in this set
+			arrayMap, err := prepareItems(responseBody["items"].([]interface{}))
 			if err != nil {
-				log.Print(err.Error())
+				return fmt.Errorf("error while converting response to array: %s", err.Error())
 			}
-			// If update is larger than timeout it means the last update to the last checked
-			// repository was longer than the timeout we set. In that case we don't need to
-			// scan any further
-			if update > timeout {
-				log.Printf("Maximum timeout reached. Last repo update was %v hours\n", update)
-				return nil
+
+			// Store them in the database
+			db.InsertContributions(arrayMap)
+			if err != nil {
+				return fmt.Errorf("error while loading data into the database: %s", err.Error())
 			}
+
+			if timeout != 0 {
+				lastItem := arrayMap[len(arrayMap)-1]
+				lastURL := lastItem["url"].(string)
+				idx := strings.Index(lastURL, "/tree")
+				update, err := checkLastUpdate(lastURL[:idx])
+				if err != nil {
+					log.Print(err.Error())
+				}
+				// If update is larger than timeout it means the last update to the last checked
+				// repository was longer than the timeout we set. In that case we don't need to
+				// scan any further
+				if update > timeout {
+					log.Printf("Maximum timeout reached. Last repo update was %v hours\n", update)
+					return nil
+				}
+			}
+		} else {
+			log.Printf(">>>>>>>>>>\n\n%s\n%v\n\n>>>>>>>>>>", responseBody, response.StatusCode)
 		}
 
 		// Wait for 5 seconds so the GitHub search API limit won't be breached
@@ -267,24 +265,6 @@ func prepareItems(items []interface{}) ([]map[string]interface{}, error) {
 				log.Printf("%s has no name or ref field so cannot be added to FDIO", fmt.Sprintf("https://github.com/%s/tree/master/%s", repository["full_name"].(string), projectPath))
 			}
 		}
-	}
-	return datamap, nil
-}
-
-// TomlTreeToMap converts a toml tree to an array of map[string]interface{}. It does so
-// by introspecting the tree and looking for the items that match a specific key.
-func TomlTreeToMap(tree *toml.Tree, key string) ([]map[string]interface{}, error) {
-	// Get the correct key
-	queryResult := tree.Get(key)
-	if queryResult == nil {
-		return nil, fmt.Errorf("No items found in the tree")
-	}
-
-	// Prepare the result
-	resultArray := queryResult.([]*toml.Tree)
-	datamap := make([]map[string]interface{}, len(resultArray))
-	for idx, val := range resultArray {
-		datamap[idx] = val.ToMap()
 	}
 	return datamap, nil
 }

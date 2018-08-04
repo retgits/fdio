@@ -25,7 +25,7 @@ var (
 
 const (
 	tomlItemKey = "items"
-	version     = "0.0.5.1"
+	version     = "0.0.6"
 )
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -41,4 +41,5 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&dbFile, "db", "", "The path to the database (required)")
 	rootCmd.MarkPersistentFlagRequired("db")
 	rootCmd.Version = version
+	rootCmd.SetVersionTemplate("\nYou're running FDIO version {{.Version}}\n\n")
 }

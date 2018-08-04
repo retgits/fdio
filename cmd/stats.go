@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/olekukonko/tablewriter"
 	"github.com/retgits/fdio/database"
 	"github.com/spf13/cobra"
 )
@@ -31,34 +30,23 @@ func runGetStats(cmd *cobra.Command, args []string) {
 		log.Fatalf("Error while connecting to the database: %s\n", err.Error())
 	}
 
-	// Prepare a table
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Statistic", "Description"})
-	table.SetAutoMergeCells(true)
-	table.SetRowLine(true)
-
 	// Get the top 5 authors
-	results, err := db.DoStatsQuery("select author, count(author) as num from acts group by author order by num desc limit 5")
+	queryOpts := database.QueryOptions{
+		Writer:     os.Stdout,
+		Query:      "select author, count(author) as num from acts group by author order by num desc limit 5",
+		MergeCells: true,
+		RowLine:    true,
+		Render:     true,
+	}
+	_, err = db.RunQuery(queryOpts)
 	if err != nil {
 		log.Printf("Error while executing query: %s\n", err.Error())
 	}
 
-	// Add the top 5 authors to the table
-	for _, item := range results {
-		table.Append([]string{"Top 5 authors", item})
-	}
-
-	// Get the type counts
-	results, err = db.DoStatsQuery("select type, count(type) as num from acts group by type")
+	// Get the item types
+	queryOpts.Query = "select type, count(type) as num from acts group by type"
+	_, err = db.RunQuery(queryOpts)
 	if err != nil {
 		log.Printf("Error while executing query: %s\n", err.Error())
 	}
-
-	// Add the top 5 authors to the table
-	for _, item := range results {
-		table.Append([]string{"Type", item})
-	}
-
-	// Print the table
-	table.Render()
 }

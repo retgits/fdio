@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/retgits/fdio/database"
+	"github.com/retgits/fdio/util"
 	"github.com/spf13/cobra"
 )
 
@@ -77,7 +78,7 @@ func runCrawl(cmd *cobra.Command, args []string) {
 	// Prepare HTTP headers
 	httpHeader := http.Header{"Authorization": {fmt.Sprintf("token %s", githubToken)}}
 
-	err = Crawl(httpHeader, db, timeout, actsType)
+	err = util.Crawl(httpHeader, db, timeout, actsType)
 	if err != nil {
 		log.Fatalf("Error while crawling for %s: %s\n", actsType, err.Error())
 	}
