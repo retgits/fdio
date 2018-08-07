@@ -146,7 +146,7 @@ func Crawl(httpHeader http.Header, db *database.Database, timeout float64, contr
 				return fmt.Errorf("error while loading data into the database: %s", err.Error())
 			}
 
-			if timeout != 0 {
+			if timeout != 0 && lastItem["url"] != nil {
 				lastItem := arrayMap[len(arrayMap)-1]
 				lastURL := lastItem["url"].(string)
 				idx := strings.Index(lastURL, "/tree")
