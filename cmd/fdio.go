@@ -25,7 +25,7 @@ var (
 
 const (
 	tomlItemKey = "items"
-	version     = "0.0.7"
+	version     = "0.0.8"
 )
 
 // Execute adds all child commands to the root command and sets flags appropriately.

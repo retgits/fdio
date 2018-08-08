@@ -161,6 +161,9 @@ func Crawl(httpHeader http.Header, db *database.Database, timeout float64, contr
 					log.Printf("Maximum timeout reached. Last repo update was %v hours\n", update)
 					return nil
 				}
+			} else if i > pages/2 {
+				log.Printf("Wasn't able to find a proper URL to check for updates, cancelling this run after %v pages", i)
+				return nil
 			}
 		} else {
 			log.Printf(">>>>>>>>>>\n\n%s\n%v\n\n>>>>>>>>>>", responseBody, response.StatusCode)
