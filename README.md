@@ -138,3 +138,6 @@ Flags:
 Global Flags:
       --db string   The path to the database (required)
 ```
+
+## Todo
+- [ ] Come up with a better way of detecting the last update of a repository 
