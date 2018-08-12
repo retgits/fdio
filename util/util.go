@@ -13,7 +13,6 @@ import (
 	"github.com/nareix/curl"
 	"github.com/retgits/fdio/database"
 	"github.com/tomnomnom/linkheader"
-	xmlpath "gopkg.in/xmlpath.v2"
 )
 
 const (
@@ -91,16 +90,25 @@ func Crawl(httpHeader http.Header, db *database.Database, timeout float64, contr
 	lastItem := arrayMap[len(arrayMap)-1]
 	if timeout != 0 && lastItem["url"] != nil {
 		lastURL := lastItem["url"].(string)
-		idx := strings.Index(lastURL, "/tree")
-		update, err := checkLastUpdate(lastURL[:idx])
+		urlItems := strings.Split(lastURL, "/")
+		resp, err := executeRequest(fmt.Sprintf("%s/repos/%s/%s", githubRootEndpoint, urlItems[3], urlItems[4]), httpHeader)
 		if err != nil {
 			log.Print(err.Error())
 		}
+		var respBody map[string]interface{}
+		bArray := []byte(resp.Body)
+		if err = json.Unmarshal(bArray, &respBody); err != nil {
+			return err
+		}
+		updatedAt := respBody["updated_at"].(string)
+		layout := "2006-01-02T15:04:05Z"
+		t, _ := time.Parse(layout, updatedAt)
+		duration := time.Since(t)
 		// If update is larger than timeout it means the last update to the last checked
 		// repository was longer than the timeout we set. In that case we don't need to
 		// scan any further
-		if update > timeout {
-			log.Printf("Maximum timeout reached. Last repo update was %v hours\n", update)
+		if duration.Hours() > timeout {
+			log.Printf("Maximum timeout reached. Last repo update was %v hours\n", duration.Hours())
 			return nil
 		}
 	}
@@ -149,16 +157,25 @@ func Crawl(httpHeader http.Header, db *database.Database, timeout float64, contr
 			lastItem := arrayMap[len(arrayMap)-1]
 			if timeout != 0 && lastItem["url"] != nil {
 				lastURL := lastItem["url"].(string)
-				idx := strings.Index(lastURL, "/tree")
-				update, err := checkLastUpdate(lastURL[:idx])
+				urlItems := strings.Split(lastURL, "/")
+				resp, err := executeRequest(fmt.Sprintf("%s/repos/%s/%s", githubRootEndpoint, urlItems[3], urlItems[4]), httpHeader)
 				if err != nil {
 					log.Print(err.Error())
 				}
+				var respBody map[string]interface{}
+				bArray := []byte(resp.Body)
+				if err = json.Unmarshal(bArray, &respBody); err != nil {
+					return err
+				}
+				updatedAt := respBody["updated_at"].(string)
+				layout := "2006-01-02T15:04:05Z"
+				t, _ := time.Parse(layout, updatedAt)
+				duration := time.Since(t)
 				// If update is larger than timeout it means the last update to the last checked
 				// repository was longer than the timeout we set. In that case we don't need to
 				// scan any further
-				if update > timeout {
-					log.Printf("Maximum timeout reached. Last repo update was %v hours\n", update)
+				if duration.Hours() > timeout {
+					log.Printf("Maximum timeout reached. Last repo update was %v hours\n", duration.Hours())
 					return nil
 				}
 			} else if i > pages/2 {
@@ -174,35 +191,6 @@ func Crawl(httpHeader http.Header, db *database.Database, timeout float64, contr
 	}
 
 	return nil
-}
-
-// checkLastUpdate sends an HTTP request to the HTML URL of a GitHub repository
-// and retrieves the last commit date.
-func checkLastUpdate(URL string) (float64, error) {
-	// Execute the request and return the result
-	res, err := executeRequest(URL, nil)
-	if err != nil {
-		return 0, err
-	}
-
-	reader := strings.NewReader(res.Body)
-	xmlroot, xmlerr := xmlpath.ParseHTML(reader)
-
-	if xmlerr != nil {
-		return 0, err
-	}
-
-	var xpath string
-	xpath = `//time-ago`
-	path := xmlpath.MustCompile(xpath)
-	if value, ok := path.String(xmlroot); ok {
-		layout := "Jan 02, 2006"
-		t, _ := time.Parse(layout, value)
-		duration := time.Since(t)
-		return duration.Hours(), nil
-	}
-
-	return 0, fmt.Errorf("could not find last update of %s", URL)
 }
 
 // prepareItems takes the raw response from the GitHub search API and turns it into an
