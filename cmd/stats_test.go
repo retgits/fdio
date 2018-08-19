@@ -24,7 +24,7 @@ func TestStats(t *testing.T) {
 
 	// no flags set
 	currentCmd := statsCommand
-	cmd := exec.Command(goCommand, currentCmd...)
+	cmd := exec.Command("go", currentCmd...)
 	cmd.Stdout = &outbuf
 	cmd.Stderr = &errbuf
 
@@ -45,8 +45,8 @@ func TestStatsDB(t *testing.T) {
 	var outbuf, errbuf bytes.Buffer
 
 	// db flags set
-	currentCmd := append(statsCommand, "--db", "../test/test-populated.dbx")
-	cmd := exec.Command(goCommand, currentCmd...)
+	currentCmd := append(statsCommand, "--db", "../test/populated.db")
+	cmd := exec.Command("go", currentCmd...)
 	cmd.Stdout = &outbuf
 	cmd.Stderr = &errbuf
 
@@ -56,8 +56,8 @@ func TestStatsDB(t *testing.T) {
 	}
 	stdout := outbuf.String()
 	stderr := errbuf.String()
-	assert.Contains(stdout, "retgits (10)")
-	assert.Contains(stdout, "activity (34)")
+	assert.Contains(stdout, "| retgits |  22 |")
+	assert.Contains(stdout, "| activity |  21 |")
 	assert.True(len(stderr) == 0)
 	outbuf.Reset()
 	errbuf.Reset()

@@ -103,7 +103,6 @@ Usage:
 Flags:
       --create   Create a new database if file doesn't exist
   -h, --help     help for init
-      --reset    Reset the database
 
 Global Flags:
       --db string   The path to the database (required)

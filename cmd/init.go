@@ -26,13 +26,19 @@ var (
 func init() {
 	rootCmd.AddCommand(initCmd)
 	initCmd.Flags().BoolVar(&dbCreate, "create", false, "Create a new database if file doesn't exist")
-	initCmd.Flags().BoolVar(&dbReset, "reset", false, "Reset the database")
 }
 
 // runInit is the actual execution of the command
 func runInit(cmd *cobra.Command, args []string) {
-	_, err := database.New(dbFile, dbCreate, dbReset)
+	dbase, err := database.New(dbFile, dbCreate)
 	if err != nil {
 		log.Printf(err.Error())
+	}
+
+	if dbCreate {
+		err = dbase.CreateTables()
+		if err != nil {
+			log.Printf(err.Error())
+		}
 	}
 }

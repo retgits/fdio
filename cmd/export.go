@@ -34,7 +34,7 @@ func init() {
 // runExport is the actual execution of the command
 func runExport(cmd *cobra.Command, args []string) {
 	// Get a database
-	db, err := database.New(dbFile, false, false)
+	db, err := database.New(dbFile, false)
 	if err != nil {
 		log.Fatalf("Error while connecting to the database: %s\n", err.Error())
 	}
@@ -73,7 +73,7 @@ func runExport(cmd *cobra.Command, args []string) {
 
 	// Loop over the result
 	for _, row := range response.Rows {
-		item := fmt.Sprintf("[[items]]\nname = %s\ntype = %s\ndescription = %s\nurl = %s\nuploadedon = %s\nauthor = %s\nshowcase = %s\n\n", row[1], row[2], row[3], row[4], row[5], row[6], row[7])
+		item := fmt.Sprintf("[[items]]\nname = \"%s\"\ntype = \"%s\"\ndescription = \"%s\"\nurl = \"%s\"\nref = \"%s\"\nuploadedon = \"%s\"\nauthor = \"%s\"\nshowcase = \"%s\"\n\n", row[1], row[2], row[3], row[4], row[0], row[5], row[6], row[7])
 		if _, err = file.WriteString(item); err != nil {
 			log.Fatalf("Error while writing %s to file: %s\n", row[0], err.Error())
 		}

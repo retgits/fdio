@@ -25,7 +25,7 @@ func TestExport(t *testing.T) {
 
 	// no flags set
 	currentCmd := exportCommand
-	cmd := exec.Command(goCommand, currentCmd...)
+	cmd := exec.Command("go", currentCmd...)
 	cmd.Stdout = &outbuf
 	cmd.Stderr = &errbuf
 
@@ -47,7 +47,7 @@ func TestExportDB(t *testing.T) {
 
 	// db flags set, but not toml
 	currentCmd := append(exportCommand, "--db", "../test/test-populated.dbx")
-	cmd := exec.Command(goCommand, currentCmd...)
+	cmd := exec.Command("go", currentCmd...)
 	cmd.Stdout = &outbuf
 	cmd.Stderr = &errbuf
 
@@ -68,8 +68,8 @@ func TestExportDBWithToml(t *testing.T) {
 	var outbuf, errbuf bytes.Buffer
 
 	// db and create flags set
-	currentCmd := append(exportCommand, "--db", "../test/test-populated.dbx", "--toml", "../test/test-export.toml")
-	cmd := exec.Command(goCommand, currentCmd...)
+	currentCmd := append(exportCommand, "--db", "../test/populated.db", "--toml", "../test/test-export.toml")
+	cmd := exec.Command("go", currentCmd...)
 	cmd.Stdout = &outbuf
 	cmd.Stderr = &errbuf
 
@@ -80,8 +80,8 @@ func TestExportDBWithToml(t *testing.T) {
 	file, err := os.Stat("../test/test-export.toml")
 	assert.Equal(file.Name(), "test-export.toml")
 	assert.False(os.IsNotExist(err))
-	assert.True(file.Size() > 14000)
-	assert.True(file.Size() < 15000)
+	assert.True(file.Size() > 5000)
+	assert.True(file.Size() < 10000)
 	outbuf.Reset()
 	errbuf.Reset()
 	os.Remove("../test/test-export.toml")

@@ -1,4 +1,4 @@
-// Package database manages storage for fdio
+// Package database manages storage
 package database
 
 import (
@@ -19,6 +19,7 @@ import (
 // Database represents the database and implements methods to perform operations on the database.
 type Database struct {
 	File string
+	DB   *sqlx.DB
 }
 
 // QueryOptions represents the options you can have for a query and how the result will be rendered
@@ -38,58 +39,81 @@ type QueryResponse struct {
 	Table       *tablewriter.Table
 }
 
-// New creates a connection to the database. filename represents the exact file location of the database
-// file, create a boolean to indiciate whether to create a new file or not if the filename doesn't exist,
-// and reset a boolean that indicates whether to delete the existing file and create a new one.
-func New(filename string, create bool, reset bool) (*Database, error) {
-	// Remove database file if requested
-	if reset {
-		log.Printf("Reset fdio database...\n")
-		err := os.Remove(filename)
-		if err != nil && !os.IsNotExist(err) {
-			return nil, fmt.Errorf("error while removing database file: %s", err.Error())
-		}
-	}
-
-	// Create database file if requestes
-	if create {
-		log.Printf("Create new fdio database...\n")
-		_, err := os.Create(filename)
-		if err != nil {
-			return nil, fmt.Errorf("error while creating database file: %s", err.Error())
-		}
-	}
-
-	// Making sure the file exists
+// New creates a connection to the database. The filename parameter represents the exact file location
+// of the database file and create is a boolean to indiciate whether to create a new file or not if
+// the filename doesn't exist.
+func New(filename string, create bool) (*Database, error) {
+	// Check if the file exists
 	_, err := os.Stat(filename)
 	if err != nil {
-		return nil, fmt.Errorf("file %s does not exist", filename)
+		if os.IsNotExist(err) && create {
+			// Create database file
+			_, err := os.Create(filename)
+			if err != nil {
+				return nil, fmt.Errorf("error while creating database file: %s", err.Error())
+			}
+		} else {
+			return nil, fmt.Errorf("error while checking for database file: %s", err.Error())
+		}
 	}
 
-	db := &Database{File: filename}
-
-	// If the database was reset or newly created, recreate the table structure
-	if reset || create {
-		db.reinit()
+	// Connect to the database
+	dbase, err := sqlx.Open("sqlite3", filename)
+	if err != nil {
+		return nil, fmt.Errorf("error while opening connection to database: %s", err.Error())
 	}
 
-	return db, nil
+	// Return a new struct
+	return &Database{File: filename, DB: dbase}, nil
 }
 
-// reinit creates the table structure needed in the database. This method must be called if you're
+// CreateTables creates the table structure needed in the database. This method must be called if you're
 // starting with a brand new database.
-func (db *Database) reinit() error {
-	// Open a connection to the database
-	dbase, err := sqlx.Open("sqlite3", db.File)
-	if err != nil {
-		return fmt.Errorf("error while opening connection to database: %s", err.Error())
-	}
-	defer dbase.Close()
-
+func (db *Database) CreateTables() error {
 	// Create the new table
-	_, err = dbase.Exec("create table acts (ref text not null primary key, name text, type text, description text, url text, uploadedon text, author text, showcase text)")
+	err := db.Exec("create table acts (ref text not null primary key, name text, type text, description text, url text, uploadedon text, author text, showcase text)")
 	if err != nil {
 		return fmt.Errorf("error while creating table: %s", err.Error())
+	}
+
+	return nil
+}
+
+// Close closes all handles to the database
+func (db *Database) Close() error {
+	err := db.DB.Close()
+	if err != nil {
+		return fmt.Errorf("error while closing database: %s", err.Error())
+	}
+	return nil
+}
+
+// ExecWithTransaction executes a query and wraps the execution in a transaction
+func (db *Database) ExecWithTransaction(query string) error {
+	// Start a transaction to add everything into the database
+	tx, err := db.DB.Begin()
+	if err != nil {
+		return fmt.Errorf("error while starting database transaction: %s", err.Error())
+	}
+
+	// Execute the query
+	_, err = db.DB.Exec(query)
+	if err != nil {
+		return fmt.Errorf("error while executing query: %s", err.Error())
+	}
+
+	// Commit the transaction
+	tx.Commit()
+
+	return nil
+}
+
+// Exec executes a query without any transaction support
+func (db *Database) Exec(query string) error {
+	// Execute the query
+	_, err := db.DB.Exec(query)
+	if err != nil {
+		return fmt.Errorf("error while executing query: %s", err.Error())
 	}
 
 	return nil

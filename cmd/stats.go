@@ -25,7 +25,7 @@ func init() {
 // runGetStats is the actual execution of the command
 func runGetStats(cmd *cobra.Command, args []string) {
 	// Get a database
-	db, err := database.New(dbFile, false, false)
+	db, err := database.New(dbFile, false)
 	if err != nil {
 		log.Fatalf("Error while connecting to the database: %s\n", err.Error())
 	}

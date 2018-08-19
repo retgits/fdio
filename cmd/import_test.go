@@ -25,7 +25,7 @@ func TestImport(t *testing.T) {
 
 	// no flags set
 	currentCmd := importCommand
-	cmd := exec.Command(goCommand, currentCmd...)
+	cmd := exec.Command("go", currentCmd...)
 	cmd.Stdout = &outbuf
 	cmd.Stderr = &errbuf
 
@@ -47,7 +47,7 @@ func TestImportDB(t *testing.T) {
 
 	// db flags set, but not toml
 	currentCmd := append(importCommand, "--db", "../test/test-import.db")
-	cmd := exec.Command(goCommand, currentCmd...)
+	cmd := exec.Command("go", currentCmd...)
 	cmd.Stdout = &outbuf
 	cmd.Stderr = &errbuf
 
@@ -68,7 +68,7 @@ func TestImportDBWithToml(t *testing.T) {
 	var outbuf, errbuf bytes.Buffer
 
 	// Create a database to import into
-	cmdDB := exec.Command(goCommand, "run", "../main.go", "init", "--db", "../test/test-import.db", "--create")
+	cmdDB := exec.Command("go", "run", "../main.go", "init", "--db", "../test/test-import.db", "--create")
 	errDB := cmdDB.Run()
 	if errDB != nil && !strings.Contains(errDB.Error(), "exit status 1") {
 		fmt.Println(errDB.Error())
@@ -76,7 +76,7 @@ func TestImportDBWithToml(t *testing.T) {
 
 	// db and create flags set
 	currentCmd := append(importCommand, "--db", "../test/test-import.db", "--toml", "../test/items.toml")
-	cmd := exec.Command(goCommand, currentCmd...)
+	cmd := exec.Command("go", currentCmd...)
 	cmd.Stdout = &outbuf
 	cmd.Stderr = &errbuf
 
@@ -87,8 +87,8 @@ func TestImportDBWithToml(t *testing.T) {
 	file, err := os.Stat("../test/test-import.db")
 	assert.Equal(file.Name(), "test-import.db")
 	assert.False(os.IsNotExist(err))
-	assert.True(file.Size() > 28000)
-	assert.True(file.Size() < 29000)
+	assert.True(file.Size() > 15000)
+	assert.True(file.Size() < 25000)
 	outbuf.Reset()
 	errbuf.Reset()
 	os.Remove("../test/test-import.db")

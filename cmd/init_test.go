@@ -14,7 +14,6 @@ import (
 )
 
 var (
-	goCommand   = "go"
 	initCommand = []string{"run", "../main.go", "init"}
 )
 
@@ -26,7 +25,7 @@ func TestInit(t *testing.T) {
 
 	// no flags set
 	currentCmd := initCommand
-	cmd := exec.Command(goCommand, currentCmd...)
+	cmd := exec.Command("go", currentCmd...)
 	cmd.Stdout = &outbuf
 	cmd.Stderr = &errbuf
 
@@ -48,7 +47,7 @@ func TestInitDB(t *testing.T) {
 
 	// db flags set, but not create
 	currentCmd := append(initCommand, "--db", "./test/test.db")
-	cmd := exec.Command(goCommand, currentCmd...)
+	cmd := exec.Command("go", currentCmd...)
 	cmd.Stdout = &outbuf
 	cmd.Stderr = &errbuf
 
@@ -57,7 +56,7 @@ func TestInitDB(t *testing.T) {
 		fmt.Println(err.Error())
 	}
 	stderr := errbuf.String()
-	assert.Contains(stderr, "./test/test.db does not exist")
+	assert.Contains(stderr, "stat ./test/test.db: no such file or directory")
 	outbuf.Reset()
 	errbuf.Reset()
 }
@@ -70,7 +69,7 @@ func TestInitDBCreate(t *testing.T) {
 
 	// db and create flags set
 	currentCmd := append(initCommand, "--db", "../test/test.db", "--create")
-	cmd := exec.Command(goCommand, currentCmd...)
+	cmd := exec.Command("go", currentCmd...)
 	cmd.Stdout = &outbuf
 	cmd.Stderr = &errbuf
 

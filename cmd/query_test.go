@@ -24,7 +24,7 @@ func TestQuery(t *testing.T) {
 
 	// no flags set
 	currentCmd := queryCommand
-	cmd := exec.Command(goCommand, currentCmd...)
+	cmd := exec.Command("go", currentCmd...)
 	cmd.Stdout = &outbuf
 	cmd.Stderr = &errbuf
 
@@ -45,8 +45,8 @@ func TestQueryDB(t *testing.T) {
 	var outbuf, errbuf bytes.Buffer
 
 	// db flags set, but not query
-	currentCmd := append(queryCommand, "--db", "../test/test-populated.dbx")
-	cmd := exec.Command(goCommand, currentCmd...)
+	currentCmd := append(queryCommand, "--db", "../test/populated.db")
+	cmd := exec.Command("go", currentCmd...)
 	cmd.Stdout = &outbuf
 	cmd.Stderr = &errbuf
 
@@ -70,8 +70,8 @@ func TestQueryWithQuery(t *testing.T) {
 
 	// db and query flags set
 	for _, query := range queries {
-		currentCmd := append(queryCommand, "--db", "../test/test-populated.dbx", "--query", query)
-		cmd := exec.Command(goCommand, currentCmd...)
+		currentCmd := append(queryCommand, "--db", "../test/populated.db", "--query", query)
+		cmd := exec.Command("go", currentCmd...)
 		cmd.Stdout = &outbuf
 		cmd.Stderr = &errbuf
 
@@ -80,7 +80,7 @@ func TestQueryWithQuery(t *testing.T) {
 			fmt.Println(err.Error())
 		}
 		stdout := outbuf.String()
-		assert.Contains(stdout, "retgits/randomstring")
+		assert.Contains(stdout, "github.com/retgits/flogo-components/activity/mashtoken")
 		outbuf.Reset()
 		errbuf.Reset()
 	}
