@@ -1,4 +1,8 @@
+## SQLite databases
 *.db
-/test/*.dbx
+
+## Crawl files
 .crawl
+
+## Artifacts generated during test
 /test/test-export.toml
