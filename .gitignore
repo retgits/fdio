@@ -1,6 +1,4 @@
-/toml/*
 *.db
 /test/*.dbx
-*.db_bak
 .crawl
 /test/test-export.toml

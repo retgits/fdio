@@ -1,8 +1,7 @@
-// Package util provides utility functions for FDIO
+// Package util implements utility methods
 package util
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nareix/curl"
 	"github.com/retgits/fdio/database"
 	"github.com/tomnomnom/linkheader"
 )
@@ -22,35 +20,6 @@ const (
 	githubTriggerSearchQuery  = "sort=indexed&order=desc&q=filename%3Atrigger.json+flogo"
 )
 
-// executeRequest executes an HTTP request
-func executeRequest(URL string, headers http.Header) (curl.Response, error) {
-	// Prepare the cURL request
-	req := curl.Get(URL)
-
-	// Optionally add the HTTP headers
-	if headers != nil {
-		req.Headers = headers
-	}
-
-	// Set timeouts
-	// DialTimeout is the TCP Connection Timeout
-	// Timeout is the Download Timeout
-	req.DialTimeout(time.Second * 10)
-	req.Timeout(time.Second * 30)
-
-	// Specify a progress monitor, otherwise it doesn't work
-	req.Progress(func(p curl.ProgressStatus) {}, time.Second)
-
-	// Execute the request and return the result
-	res, err := req.Do()
-	if err != nil {
-		return res, err
-	}
-
-	// Return values
-	return res, nil
-}
-
 // Crawl will search on GitHub for activity.json or trigger.json files that are related to Flogo
 func Crawl(httpHeader http.Header, db *database.Database, timeout float64, contribType string) error {
 	githubSearchQuery := ""
@@ -60,145 +29,62 @@ func Crawl(httpHeader http.Header, db *database.Database, timeout float64, contr
 		githubSearchQuery = githubActivitySearchQuery
 	}
 
-	// Get first page of activities
-	URL := fmt.Sprintf("%s%s?%s", githubRootEndpoint, githubSearchEndpoint, githubSearchQuery)
-	log.Printf("Send request to %s", URL)
-	response, err := executeRequest(URL, httpHeader)
-	if err != nil {
-		return err
-	}
+	var maxPages int
+	i := 0
 
-	// Unmarshal the JSON response
-	var responseBody map[string]interface{}
-	byteArray := []byte(response.Body)
-	if err = json.Unmarshal(byteArray, &responseBody); err != nil {
-		return err
-	}
-
-	// Collect the items in this set
-	arrayMap, err := prepareItems(responseBody["items"].([]interface{}))
-	if err != nil {
-		return fmt.Errorf("error while converting response to array: %s", err.Error())
-	}
-
-	// Store them in the database
-	db.InsertContributions(arrayMap)
-	if err != nil {
-		return fmt.Errorf("error while loading data into the database: %s", err.Error())
-	}
-
-	lastItem := arrayMap[len(arrayMap)-1]
-	if timeout != 0 && lastItem["url"] != nil {
-		lastURL := lastItem["url"].(string)
-		urlItems := strings.Split(lastURL, "/")
-		resp, err := executeRequest(fmt.Sprintf("%s/repos/%s/%s", githubRootEndpoint, urlItems[3], urlItems[4]), httpHeader)
+	for {
+		// Get a GitHub page
+		URL := fmt.Sprintf("%s%s?%s&page=%v", githubRootEndpoint, githubSearchEndpoint, githubSearchQuery, i)
+		log.Printf("Send request to %s", URL)
+		response, err := HTTPRequest(URL, httpHeader)
 		if err != nil {
-			log.Print(err.Error())
-		}
-		var respBody map[string]interface{}
-		bArray := []byte(resp.Body)
-		if err = json.Unmarshal(bArray, &respBody); err != nil {
 			return err
 		}
-		updatedAt := respBody["updated_at"].(string)
-		layout := "2006-01-02T15:04:05Z"
-		t, _ := time.Parse(layout, updatedAt)
-		duration := time.Since(t)
+
+		// Check how many pages exist
+		// Only do this the first time
+		if i == 0 {
+			links := linkheader.Parse(response.Headers.Get("Link"))
+			for _, link := range links {
+				if link.Rel == "last" {
+					maxPages, _ = strconv.Atoi(link.URL[strings.Index(link.URL, "page=")+5:])
+				}
+			}
+			log.Printf("There are a total of %d pages", maxPages)
+		}
+
+		// Collect the items in this set
+		lastItem, err := prepareItems(response.Body["items"].([]interface{}), db)
+		if err != nil {
+			return fmt.Errorf("error while converting response to array: %s", err.Error())
+		}
+
+		// Check the last update time
+		duration, err := checkLastRepoUpdate(lastItem, httpHeader)
 		// If update is larger than timeout it means the last update to the last checked
 		// repository was longer than the timeout we set. In that case we don't need to
 		// scan any further
-		if duration.Hours() > timeout {
-			log.Printf("Maximum timeout reached. Last repo update was %v hours\n", duration.Hours())
+		if duration > timeout {
+			log.Printf("Maximum timeout reached. Last repo update was %v hours\n", duration)
 			return nil
 		}
-	}
 
-	// Check how many pages exist
-	var pages int
-	links := linkheader.Parse(response.Headers.Get("Link"))
-	for _, link := range links {
-		if link.Rel == "last" {
-			pages, _ = strconv.Atoi(link.URL[strings.Index(link.URL, "page=")+5:])
-		}
-	}
-
-	log.Printf("Found a total number of %v pages\n", pages)
-
-	for i := 2; i <= pages; i++ {
-		// Execute the request
-		URL := fmt.Sprintf("%s%s?%s&page=%v", githubRootEndpoint, githubSearchEndpoint, githubSearchQuery, i)
-		log.Printf("Send request to %s", URL)
-		response, err := executeRequest(URL, httpHeader)
-		if err != nil {
-			return err
-		}
-
-		// Unmarshal the JSON response
-		var responseBody map[string]interface{}
-		byteArray := []byte(response.Body)
-		if err = json.Unmarshal(byteArray, &responseBody); err != nil {
-			return err
-		}
-
-		// While the response body should never be empty, better to be safe than sorry
-		if responseBody["items"] != nil {
-			// Collect the items in this set
-			arrayMap, err := prepareItems(responseBody["items"].([]interface{}))
-			if err != nil {
-				return fmt.Errorf("error while converting response to array: %s", err.Error())
-			}
-
-			// Store them in the database
-			db.InsertContributions(arrayMap)
-			if err != nil {
-				return fmt.Errorf("error while loading data into the database: %s", err.Error())
-			}
-
-			lastItem := arrayMap[len(arrayMap)-1]
-			if timeout != 0 && lastItem["url"] != nil {
-				lastURL := lastItem["url"].(string)
-				urlItems := strings.Split(lastURL, "/")
-				resp, err := executeRequest(fmt.Sprintf("%s/repos/%s/%s", githubRootEndpoint, urlItems[3], urlItems[4]), httpHeader)
-				if err != nil {
-					log.Print(err.Error())
-				}
-				var respBody map[string]interface{}
-				bArray := []byte(resp.Body)
-				if err = json.Unmarshal(bArray, &respBody); err != nil {
-					return err
-				}
-				updatedAt := respBody["updated_at"].(string)
-				layout := "2006-01-02T15:04:05Z"
-				t, _ := time.Parse(layout, updatedAt)
-				duration := time.Since(t)
-				// If update is larger than timeout it means the last update to the last checked
-				// repository was longer than the timeout we set. In that case we don't need to
-				// scan any further
-				if duration.Hours() > timeout {
-					log.Printf("Maximum timeout reached. Last repo update was %v hours\n", duration.Hours())
-					return nil
-				}
-			} else if i > pages/2 {
-				log.Printf("Wasn't able to find a proper URL to check for updates, cancelling this run after %v pages", i)
-				return nil
-			}
-		} else {
-			log.Printf(">>>>>>>>>>\n\n%s\n%v\n\n>>>>>>>>>>", responseBody, response.StatusCode)
+		// Stop if the maxPages is reached
+		if i++; i == maxPages {
+			return nil
 		}
 
 		// Wait for 5 seconds so the GitHub search API limit won't be breached
 		time.Sleep(5 * time.Second)
 	}
-
-	return nil
 }
 
 // prepareItems takes the raw response from the GitHub search API and turns it into an
 // array of map[string]interface{} so it can be added to the database
-func prepareItems(items []interface{}) ([]map[string]interface{}, error) {
-	datamap := make([]map[string]interface{}, len(items))
+func prepareItems(items []interface{}, db *database.Database) (map[string]interface{}, error) {
+	var lastItem map[string]interface{}
 
-	for idx, item := range items {
+	for _, item := range items {
 		// For each item we need some metadata
 		// the full_name of the repository contains both the repository name as
 		// well as the name of the owner
@@ -208,16 +94,9 @@ func prepareItems(items []interface{}) ([]map[string]interface{}, error) {
 		contentURL = strings.Replace(contentURL, "/blob", "", 1)
 
 		// Get the content of the actual file
-		response, err := executeRequest(contentURL, nil)
+		response, err := HTTPRequest(contentURL, nil)
 
-		// Unmarshal the JSON response
-		var responseBody map[string]interface{}
-		byteArray := []byte(response.Body)
-		if err = json.Unmarshal(byteArray, &responseBody); err != nil {
-			log.Printf("error while calling %s: %s", contentURL, err.Error())
-		}
-
-		if err == nil && responseBody["type"] != nil {
+		if err == nil && response.Body["type"] != nil {
 			// Get the project path without activity.json at the end
 			projectPath := project["path"].(string)
 			if strings.Contains(projectPath, "activity.json") {
@@ -227,35 +106,58 @@ func prepareItems(items []interface{}) ([]map[string]interface{}, error) {
 			}
 
 			// Get the project type
-			projectType := responseBody["type"].(string)
+			projectType := response.Body["type"].(string)
 			projectType = projectType[6:]
 			projectType = strings.Replace(projectType, ":", "", -1)
 
 			// Set author to unknown if it doesn't exist
-			if responseBody["author"] == nil {
-				responseBody["author"] = "Unknown"
+			if response.Body["author"] == nil {
+				response.Body["author"] = "Unknown"
 			}
 
 			// Set an empty string if the description doesn't exist
-			if responseBody["description"] == nil {
-				responseBody["description"] = ""
+			if response.Body["description"] == nil {
+				response.Body["description"] = ""
 			}
 
-			if responseBody["name"] != nil && responseBody["ref"] != nil {
+			if response.Body["name"] != nil && response.Body["ref"] != nil {
 				tempMap := make(map[string]interface{})
-				tempMap["ref"] = responseBody["ref"].(string)
-				tempMap["name"] = responseBody["name"].(string)
+				tempMap["ref"] = response.Body["ref"].(string)
+				tempMap["name"] = response.Body["name"].(string)
 				tempMap["type"] = projectType
-				tempMap["description"] = responseBody["description"].(string)
+				tempMap["description"] = response.Body["description"].(string)
 				tempMap["url"] = fmt.Sprintf("https://github.com/%s/tree/master/%s", repository["full_name"].(string), projectPath)
 				tempMap["uploadedon"] = ""
-				tempMap["author"] = responseBody["author"].(string)
+				tempMap["author"] = response.Body["author"].(string)
 				tempMap["showcase"] = ""
-				datamap[idx] = tempMap
+				err := db.InsertContribution(tempMap)
+				if err != nil {
+					log.Printf(err.Error())
+					return nil, err
+				}
+				lastItem = tempMap
 			} else {
 				log.Printf("%s has no name or ref field so cannot be added to FDIO", fmt.Sprintf("https://github.com/%s/tree/master/%s", repository["full_name"].(string), projectPath))
 			}
 		}
 	}
-	return datamap, nil
+	return lastItem, nil
+}
+
+func checkLastRepoUpdate(item map[string]interface{}, httpHeader http.Header) (float64, error) {
+	url := item["url"].(string)
+	urlItems := strings.Split(url, "/")
+
+	response, err := HTTPRequest(fmt.Sprintf("%s/repos/%s/%s", githubRootEndpoint, urlItems[3], urlItems[4]), httpHeader)
+	if err != nil {
+		log.Print(err.Error())
+		return 0, err
+	}
+
+	updatedAt := response.Body["updated_at"].(string)
+	layout := "2006-01-02T15:04:05Z"
+	t, _ := time.Parse(layout, updatedAt)
+	duration := time.Since(t)
+
+	return duration.Hours(), nil
 }

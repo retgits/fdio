@@ -1,4 +1,4 @@
-// Package util provides utility functions for FDIO
+// Package util implements utility methods
 package util
 
 import (

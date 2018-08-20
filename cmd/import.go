@@ -46,9 +46,10 @@ func runImport(cmd *cobra.Command, args []string) {
 	}
 
 	// Load the data into the database
-	err = db.InsertContributions(arrayMap)
-	if err != nil {
-		log.Printf("Error while loading data into the database: %s\n", err.Error())
+	for _, item := range arrayMap {
+		err = db.InsertContribution(item)
+		if err != nil {
+			log.Printf("Error while loading data into the database: %s\n", err.Error())
+		}
 	}
-
 }

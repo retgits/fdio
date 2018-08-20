@@ -120,73 +120,53 @@ func (db *Database) Exec(query string) error {
 }
 
 // InsertContributions inserts activities and triggers into the database. The input argument is an array of
-// map[string]interface{} which will be used in the insert statement. Inserts are done in a transaction.
+// map[string]interface{} which will be used in the insert statement.
 func (db *Database) InsertContributions(items []map[string]interface{}) error {
-	// Open a connection to the database
-	dbase, err := sqlx.Open("sqlite3", db.File)
-	if err != nil {
-		return fmt.Errorf("error while opening connection to database: %s", err.Error())
-	}
-	defer dbase.Close()
-
-	// Start a transaction to add everything into the database
-	tx, err := dbase.Begin()
-	if err != nil {
-		return fmt.Errorf("error while starting database transaction: %s", err.Error())
-	}
-
-	// Create a prepared statement
-	stmt, err := tx.Prepare("insert into acts(ref, name, type, description, url, uploadedon, author, showcase) values(?, ?, ?, ?, ?, ?, ?, ?)")
-	if err != nil {
-		return fmt.Errorf("error while creating prepared statement: %s", err.Error())
-	}
-	defer stmt.Close()
-
 	// Insert items into database
 	for _, item := range items {
 		if item["ref"] != nil {
-			// Get values from the item or assign a default value
-			ref := getValue(item["ref"], "")
-			name := getValue(item["name"], "")
-			contribType := getValue(item["type"], "")
-			url := getValue(item["url"], "")
-			author := getValue(item["author"], "")
-			uploadedOn := getValue(item["uploadedon"], "")
-			showcase := getValue(item["showcase"], "false")
-			description := getValue(item["description"], "")
-
-			// Execute the prepared statement
-			_, err = stmt.Exec(ref, name, contribType, description, url, uploadedOn, author, showcase)
-			if err != nil {
-				// If the ref field already exists in the database, we'll try to update the values assuming the ref field is a valid Go package
-				if strings.Contains(err.Error(), "UNIQUE constraint failed: acts.ref") && len(strings.Split(ref, "/")) > 2 {
-					urlComponents := strings.Split(ref, "/")
-					refToURL := fmt.Sprintf("https://%s/tree/master/%s/", strings.Join(urlComponents[:3], "/"), strings.Join(urlComponents[3:], "/"))
-
-					// Only perform an update if the ref field matches the URL, otherwise it is a fork and the ref should have been updated
-					if strings.Contains(refToURL, url) {
-						// Create another prepared statement
-						updateStmt, err := tx.Prepare("update acts set type=?, description=?, url=?, uploadedon=?, showcase=? where ref=?")
-						if err != nil {
-							return fmt.Errorf("error while creating update statement: %s", err.Error())
-						}
-						defer updateStmt.Close()
-
-						// Execute the update statement
-						_, err = updateStmt.Exec(contribType, description, url, uploadedOn, showcase, ref)
-						if err != nil {
-							log.Printf("Error while updating %s: %s\n", ref, err.Error())
-						}
-					}
-				} else {
-					log.Printf("Error while inserting %s into database: %s\n", ref, err.Error())
-				}
-			}
+			db.InsertContribution(item)
 		}
 	}
 
-	// Commit the transaction
-	tx.Commit()
+	return nil
+}
+
+// InsertContribution inserts activities and triggers into the database. The input argument is a
+// map[string]interface{} which will be used in the insert statement.
+func (db *Database) InsertContribution(item map[string]interface{}) error {
+	if item["ref"] != nil {
+		// Get values from the item or assign a default value
+		ref := getValue(item["ref"], "")
+		name := getValue(item["name"], "")
+		contribType := getValue(item["type"], "")
+		url := getValue(item["url"], "")
+		author := getValue(item["author"], "")
+		uploadedOn := getValue(item["uploadedon"], "")
+		showcase := getValue(item["showcase"], "false")
+		description := getValue(item["description"], "")
+
+		// Try to insert the new item
+		err := db.Exec(fmt.Sprintf("insert into acts(ref, name, type, description, url, uploadedon, author, showcase) values(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\")", ref, name, contribType, description, url, uploadedOn, author, showcase))
+		if err != nil {
+			// If the ref field already exists in the database, we'll try to update the values assuming the ref field is a valid Go package
+			if strings.Contains(err.Error(), "UNIQUE constraint failed: acts.ref") && len(strings.Split(ref, "/")) > 2 {
+				urlComponents := strings.Split(ref, "/")
+				refToURL := fmt.Sprintf("https://%s/tree/master/%s/", strings.Join(urlComponents[:3], "/"), strings.Join(urlComponents[3:], "/"))
+
+				// Only perform an update if the ref field matches the URL, otherwise it is a fork and the ref should have been updated
+				if strings.Contains(refToURL, url) {
+					// Try to update the item
+					err := db.Exec(fmt.Sprintf("update acts set type=\"%s\", description=\"%s\", url=\"%s\", uploadedon=\"%s\", showcase=\"%s\" where ref=\"%s\"", contribType, description, url, uploadedOn, showcase, ref))
+					if err != nil {
+						log.Printf("Error while updating %s: %s\n", ref, err.Error())
+					}
+				}
+			} else {
+				log.Printf("Error while inserting %s into database: %s\n", ref, err.Error())
+			}
+		}
+	}
 
 	return nil
 }
