@@ -18,11 +18,6 @@ var exportCmd = &cobra.Command{
 	Run:   runExport,
 }
 
-// Flags
-var (
-	overwrite bool
-)
-
 // init registers the command and flags
 func init() {
 	rootCmd.AddCommand(exportCmd)

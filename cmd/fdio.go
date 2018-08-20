@@ -19,13 +19,14 @@ A command-line interface for the Flogo Dot IO website`,
 
 // Variables used in multiple flags
 var (
-	dbFile   string
-	tomlFile string
+	dbFile    string
+	tomlFile  string
+	overwrite bool
 )
 
 const (
 	tomlItemKey = "items"
-	version     = "0.1.0"
+	version     = "0.1.1"
 )
 
 // Execute adds all child commands to the root command and sets flags appropriately.

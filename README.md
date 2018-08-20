@@ -25,10 +25,13 @@ _You might need additional packages if you're running this command on a Linux sy
 
 ## Usage
 ```
+A command-line interface for the Flogo Dot IO website
+
 Usage:
   fdio [command]
 
 Available Commands:
+  backup      Performs a backup (upload) or restore (download) of a database file from Amazon S3
   crawl       Crawls GitHub to find new activities and triggers
   export      Export the database to a toml file
   help        Help about any command
@@ -43,6 +46,23 @@ Flags:
       --version     version for fdio
 
 Use "fdio [command] --help" for more information about a command.
+```
+### Backup
+```
+Performs a backup (upload) or restore (download) of a database file from Amazon S3
+
+Usage:
+  fdio backup [flags]
+
+Flags:
+      --bucket string     The name of the S3 bucket (required)
+  -h, --help              help for backup
+      --overwrite         When restoring a file, should any existing file be overwritten (defaults to false)
+      --region string     The region of the S3 bucket (defaults to us-west-2) (default "us-west-2")
+      --restore           Restore (download) the file from Amazon S3
+
+Global Flags:
+      --db string   The path to the database (required)
 ```
 
 ### Crawl
