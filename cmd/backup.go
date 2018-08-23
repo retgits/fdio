@@ -52,7 +52,7 @@ func runBackup(cmd *cobra.Command, args []string) {
 		_, err := os.Stat(filename)
 		if err == nil && !overwrite {
 			log.Fatalf("The file %s already exists and no overwrite flag was specified\n", filename)
-		} else if err != nil {
+		} else if err != nil && !os.IsNotExist(err) {
 			log.Fatal(err.Error())
 		}
 		// Download file
