@@ -16,11 +16,11 @@ import (
 const (
 	githubRootEndpoint        = "https://api.github.com"
 	githubSearchEndpoint      = "/search/code"
-	githubActivitySearchQuery = "sort=indexed&order=desc&q=filename%3Aactivity.json+flogo"
-	githubTriggerSearchQuery  = "sort=indexed&order=desc&q=filename%3Atrigger.json+flogo"
+	githubActivitySearchQuery = "sort=indexed&order=desc&q=filename%3Aactivity.go+flogo"
+	githubTriggerSearchQuery  = "sort=indexed&order=desc&q=filename%3Atrigger.go+flogo"
 )
 
-// Crawl will search on GitHub for activity.json or trigger.json files that are related to Flogo
+// Crawl will search on GitHub for activity.go or trigger.go files that are related to Flogo
 func Crawl(httpHeader http.Header, db *database.Database, timeout float64, contribType string) error {
 	githubSearchQuery := ""
 	if contribType == "Trigger" {
@@ -75,7 +75,7 @@ func Crawl(httpHeader http.Header, db *database.Database, timeout float64, contr
 		}
 
 		// Wait for 5 seconds so the GitHub search API limit won't be breached
-		time.Sleep(5 * time.Second)
+		time.Sleep(10 * time.Second)
 	}
 }
 
@@ -85,60 +85,33 @@ func prepareItems(items []interface{}, db *database.Database) (map[string]interf
 	var lastItem map[string]interface{}
 
 	for _, item := range items {
-		// For each item we need some metadata
-		// the full_name of the repository contains both the repository name as
-		// well as the name of the owner
-		project := item.(map[string]interface{})
-		repository := project["repository"].(map[string]interface{})
-		contentURL := strings.Replace(project["html_url"].(string), "github.com", "raw.githubusercontent.com", 1)
-		contentURL = strings.Replace(contentURL, "/blob", "", 1)
+		// For each item we need some metadata, to fillout the db
+		// Map 'm' contains the path and name of the item being searched for
+		// Map 'r' contains info about the repo returned
+		m := item.(map[string]interface{})
+		r := m["repository"].(map[string]interface{})
+		author := strings.Split(r["full_name"].(string), "/")[0]
 
-		// Get the content of the actual file
-		response, err := HTTPRequest(contentURL, nil)
-
-		if err == nil && response.Body["type"] != nil {
-			// Get the project path without activity.json at the end
-			projectPath := project["path"].(string)
-			if strings.Contains(projectPath, "activity.json") {
-				projectPath = projectPath[:len(projectPath)-13]
-			} else {
-				projectPath = projectPath[:len(projectPath)-12]
+		//If the item is not a go test file , a fork, or from project-flogo, add to db and record lastItem
+		if !strings.Contains(m["name"].(string), "_test") && !r["fork"].(bool) && author != "project-flogo" {
+			tempMap := make(map[string]interface{})
+			ref := fmt.Sprintf("https://github.com/%s/%s", r["full_name"], m["path"])
+			ref = strings.Replace(ref, m["name"].(string), "", 1)
+			tempMap["ref"] = ref
+			tmplist := strings.Split(ref, "/")
+			tempMap["name"] = tmplist[len(tmplist)-2]
+			tempMap["type"] = strings.Replace(m["name"].(string), ".go", "", 1)
+			tempMap["description"] = ""
+			tempMap["url"] = fmt.Sprintf("https://github.com/%s/tree/master/%s", r["full_name"].(string), m["path"])
+			tempMap["uploadedon"] = time.Now().String()
+			tempMap["author"] = author
+			tempMap["showcase"] = ""
+			err := db.InsertContribution(tempMap)
+			if err != nil {
+				log.Printf(err.Error())
+				return nil, err
 			}
-
-			// Get the project type
-			projectType := response.Body["type"].(string)
-			projectType = projectType[6:]
-			projectType = strings.Replace(projectType, ":", "", -1)
-
-			// Set author to unknown if it doesn't exist
-			if response.Body["author"] == nil {
-				response.Body["author"] = "Unknown"
-			}
-
-			// Set an empty string if the description doesn't exist
-			if response.Body["description"] == nil {
-				response.Body["description"] = ""
-			}
-
-			if response.Body["name"] != nil && response.Body["ref"] != nil {
-				tempMap := make(map[string]interface{})
-				tempMap["ref"] = response.Body["ref"].(string)
-				tempMap["name"] = response.Body["name"].(string)
-				tempMap["type"] = projectType
-				tempMap["description"] = response.Body["description"].(string)
-				tempMap["url"] = fmt.Sprintf("https://github.com/%s/tree/master/%s", repository["full_name"].(string), projectPath)
-				tempMap["uploadedon"] = ""
-				tempMap["author"] = response.Body["author"].(string)
-				tempMap["showcase"] = ""
-				err := db.InsertContribution(tempMap)
-				if err != nil {
-					log.Printf(err.Error())
-					return nil, err
-				}
-				lastItem = tempMap
-			} else {
-				log.Printf("%s has no name or ref field so cannot be added to FDIO", fmt.Sprintf("https://github.com/%s/tree/master/%s", repository["full_name"].(string), projectPath))
-			}
+			lastItem = tempMap
 		}
 	}
 	return lastItem, nil
