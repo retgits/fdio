@@ -97,16 +97,19 @@ func prepareItems(items []interface{}, db *database.Database) (map[string]interf
 			tempMap := make(map[string]interface{})
 			ref := fmt.Sprintf("https://github.com/%s/%s", r["full_name"], m["path"])
 			ref = strings.Replace(ref, m["name"].(string), "", 1)
-			tempMap["ref"] = ref
 			tmplist := strings.Split(ref, "/")
-			tempMap["name"] = tmplist[len(tmplist)-2]
-			tempMap["type"] = strings.Replace(m["name"].(string), ".go", "", 1)
-			tempMap["description"] = ""
-			tempMap["url"] = fmt.Sprintf("https://github.com/%s/tree/master/%s", r["full_name"].(string), m["path"])
-			tempMap["uploadedon"] = time.Now().String()
-			tempMap["author"] = author
 			tempMap["showcase"] = ""
-			err := db.InsertContribution(tempMap)
+			c := database.Contribution{
+				Ref:              ref,
+				Name:             tmplist[len(tmplist)-2],
+				ContributionType: strings.Replace(m["name"].(string), ".go", "", 1),
+				Description:      "",
+				SourceURL:        fmt.Sprintf("https://github.com/%s/tree/master/%s", r["full_name"].(string), m["path"]),
+				UploadedOn:       time.Now(),
+				Author:           author,
+				ShowcaseEnabled:  "no",
+			}
+			err := db.InsertContribution(c)
 			if err != nil {
 				log.Printf(err.Error())
 				return nil, err

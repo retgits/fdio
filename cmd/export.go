@@ -29,7 +29,7 @@ func init() {
 // runExport is the actual execution of the command
 func runExport(cmd *cobra.Command, args []string) {
 	// Get a database
-	db, err := database.New(dbFile, false)
+	db, err := database.OpenSession(dbFile)
 	if err != nil {
 		log.Fatalf("Error while connecting to the database: %s\n", err.Error())
 	}
@@ -61,7 +61,7 @@ func runExport(cmd *cobra.Command, args []string) {
 	queryOpts := database.QueryOptions{
 		Query: "select ref, name, type, description, url, uploadedon, author, showcase from acts",
 	}
-	response, err := db.RunQuery(queryOpts)
+	response, err := db.Query(queryOpts)
 	if err != nil {
 		log.Fatalf("Error while executing query: %s\n", err.Error())
 	}

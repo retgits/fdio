@@ -1,60 +1,137 @@
 // Package database manages storage for fdio
-package database_test
+package database
 
 import (
-	"fmt"
 	"os"
 	"testing"
+	"time"
 
-	"github.com/retgits/fdio/database"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
-var (
-	newDBname       = "../test/test.db"
-	populatedDBname = "../test/populated.db"
-	queries         = []string{"select * from acts where author = \"retgits\"", "select ref, count(*) from acts where author=\"retgits\"", "select author, count(author) as num from acts group by author order by num desc limit 5", "select type, count(type) as num from acts group by type"}
-)
-
-func TestDBNew(t *testing.T) {
-	fmt.Println("TestDBNew")
-	assert := assert.New(t)
-
-	// Try to access a non-existing database file
-	db, err := database.New(newDBname, false)
-	assert.NotNil(err)
-	assert.Equal(err.Error(), "error while checking for database file: stat ../test/test.db: no such file or directory")
-
-	// Create a new database
-	db, err = database.New(newDBname, true)
-	assert.Equal(newDBname, db.File)
-	assert.Nil(err)
-	os.Remove(newDBname)
+type DBOpsTestSuite struct {
+	suite.Suite
+	DatabaseToCreate    string
+	NotExistingDatabase string
 }
 
-func TestDBDoQuery(t *testing.T) {
-	fmt.Println("TestDBDoQuery")
-	assert := assert.New(t)
+type DBQueryTestSuite struct {
+	suite.Suite
+	DatabaseToCreate string
+	db               *Database
+}
 
-	db, err := database.New(populatedDBname, false)
-	assert.Equal(populatedDBname, db.File)
-	assert.Nil(err)
+func (suite *DBOpsTestSuite) SetupTest() {
+	suite.DatabaseToCreate = "./my.db"
+	suite.NotExistingDatabase = "./other.db"
+	os.Create(suite.DatabaseToCreate)
+}
 
-	for _, query := range queries {
-		queryOpts := database.QueryOptions{
-			Writer:     os.Stdout,
-			Query:      query,
-			MergeCells: true,
-			RowLine:    true,
-			Render:     true,
-		}
-		response, err := db.RunQuery(queryOpts)
-		assert.Nil(err)
-		assert.True(len(response.ColumnNames) > 1)
-		assert.True(len(response.Rows) > 0)
+func (suite *DBOpsTestSuite) TearDownTest() {
+	os.Remove(suite.DatabaseToCreate)
+}
+
+func (suite *DBQueryTestSuite) SetupTest() {
+	suite.DatabaseToCreate = "./mycontrib.db"
+	os.Create(suite.DatabaseToCreate)
+	db, _ := OpenSession(suite.DatabaseToCreate)
+	db.Initialize()
+	suite.db = db
+}
+
+func (suite *DBQueryTestSuite) TearDownTest() {
+	os.Remove(suite.DatabaseToCreate)
+}
+
+func (suite *DBOpsTestSuite) TestOpenSession() {
+	db, err := OpenSession(suite.NotExistingDatabase)
+	assert.Nil(suite.T(), db)
+	assert.Error(suite.T(), err)
+
+	db, err = OpenSession(suite.DatabaseToCreate)
+	assert.NotNil(suite.T(), db)
+	assert.NoError(suite.T(), err)
+
+	assert.Panics(suite.T(), func() { MustOpenSession(suite.NotExistingDatabase) })
+
+	db = MustOpenSession(suite.DatabaseToCreate)
+	assert.NotNil(suite.T(), db)
+}
+
+func (suite *DBOpsTestSuite) TestInitializeDBStructure() {
+	db, _ := OpenSession(suite.NotExistingDatabase)
+
+	assert.Panics(suite.T(), func() { db.Initialize() })
+
+	db, _ = OpenSession(suite.DatabaseToCreate)
+	err := db.Initialize()
+	assert.NoError(suite.T(), err)
+
+	err = db.Initialize()
+	assert.Error(suite.T(), err)
+	assert.EqualError(suite.T(), err, "table contributions already exists")
+}
+
+func (suite *DBQueryTestSuite) TestInsertContrib() {
+	c := Contribution{
+		Author:           "retgits",
+		ContributionType: "flogo:activity",
+		Description:      "A new awesome contribution",
+		Homepage:         "https://flogo.io",
+		Name:             "awesomeness",
+		Ref:              "deprecated",
+		ShowcaseEnabled:  "no",
+		SourceURL:        "https://github.com/retgits",
+		Title:            "AwesomeContrib",
+		UploadedOn:       time.Now(),
+		Version:          "0.1.0",
 	}
+	err := suite.db.InsertContribution(c)
+	assert.NoError(suite.T(), err)
 }
 
-func cleanup() {
-	os.Remove(newDBname)
+func (suite *DBQueryTestSuite) TestQuery() {
+	c := Contribution{
+		Author:           "retgits",
+		ContributionType: "flogo:activity",
+		Description:      "A new awesome contribution",
+		Homepage:         "https://flogo.io",
+		Name:             "awesomeness",
+		Ref:              "deprecated",
+		ShowcaseEnabled:  "no",
+		SourceURL:        "https://github.com/retgits",
+		Title:            "AwesomeContrib",
+		UploadedOn:       time.Now(),
+		Version:          "0.1.0",
+	}
+	suite.db.InsertContribution(c)
+
+	o := QueryOptions{
+		Writer:     os.Stdout,
+		Caption:    "This table contains all contributions",
+		MergeCells: false,
+		Query:      "select * from contributions",
+		Render:     true,
+		RowLine:    true,
+	}
+
+	res, err := suite.db.Query(o)
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), res)
+}
+
+func (suite *DBOpsTestSuite) TestCloseDB() {
+	db, _ := OpenSession(suite.NotExistingDatabase)
+
+	assert.Panics(suite.T(), func() { db.Close() })
+
+	db, _ = OpenSession(suite.DatabaseToCreate)
+	err := db.Close()
+	assert.NoError(suite.T(), err)
+}
+
+func TestInitTestSuite(t *testing.T) {
+	suite.Run(t, new(DBOpsTestSuite))
+	suite.Run(t, new(DBQueryTestSuite))
 }

@@ -25,7 +25,7 @@ func init() {
 // runGetStats is the actual execution of the command
 func runGetStats(cmd *cobra.Command, args []string) {
 	// Get a database
-	db, err := database.New(dbFile, false)
+	db, err := database.OpenSession(dbFile)
 	if err != nil {
 		log.Fatalf("Error while connecting to the database: %s\n", err.Error())
 	}
@@ -38,14 +38,14 @@ func runGetStats(cmd *cobra.Command, args []string) {
 		RowLine:    true,
 		Render:     true,
 	}
-	_, err = db.RunQuery(queryOpts)
+	_, err = db.Query(queryOpts)
 	if err != nil {
 		log.Printf("Error while executing query: %s\n", err.Error())
 	}
 
 	// Get the item types
 	queryOpts.Query = "select type, count(type) as num from acts group by type"
-	_, err = db.RunQuery(queryOpts)
+	_, err = db.Query(queryOpts)
 	if err != nil {
 		log.Printf("Error while executing query: %s\n", err.Error())
 	}

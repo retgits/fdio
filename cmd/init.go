@@ -30,13 +30,13 @@ func init() {
 
 // runInit is the actual execution of the command
 func runInit(cmd *cobra.Command, args []string) {
-	dbase, err := database.New(dbFile, dbCreate)
+	dbase, err := database.OpenSession(dbFile)
 	if err != nil {
 		log.Printf(err.Error())
 	}
 
 	if dbCreate {
-		err = dbase.CreateTables()
+		err = dbase.Initialize()
 		if err != nil {
 			log.Printf(err.Error())
 		}
