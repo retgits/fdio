@@ -121,8 +121,7 @@ Usage:
   fdio init [flags]
 
 Flags:
-      --create   Create a new database if file doesn't exist
-  -h, --help     help for init
+  -h, --help   help for init
 
 Global Flags:
       --db string   The path to the database (required)
