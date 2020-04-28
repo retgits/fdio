@@ -4,6 +4,8 @@ package cmd
 
 import (
 	"log"
+	"os"
+	"strings"
 
 	"github.com/retgits/fdio/database"
 	"github.com/spf13/cobra"
@@ -23,8 +25,13 @@ func init() {
 
 // runInit is the actual execution of the command
 func runInit(cmd *cobra.Command, args []string) {
-	err := database.MustOpenSession(dbFile).Initialize()
+	_, err := database.OpenSession(databaseFile)
+	if err != nil && !strings.Contains(err.Error(), "no such file or directory") {
+		log.Fatal(err.Error())
+	}
+	os.Create(databaseFile)
+	err = database.MustOpenSession(databaseFile).Initialize()
 	if err != nil {
-		log.Println(err.Error())
+		log.Fatal(err.Error())
 	}
 }

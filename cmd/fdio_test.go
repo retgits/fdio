@@ -3,59 +3,92 @@
 package cmd
 
 import (
-	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
-var (
-	mainCommand = []string{"run", "../main.go"}
-)
-
-func TestMain(t *testing.T) {
-	fmt.Println("TestMain")
-	assert := assert.New(t)
-
-	var outbuf, errbuf bytes.Buffer
-
-	// no flags set
-	currentCmd := mainCommand
-	cmd := exec.Command("go", currentCmd...)
-	cmd.Stdout = &outbuf
-	cmd.Stderr = &errbuf
-
-	err := cmd.Run()
-	if err != nil && !strings.Contains(err.Error(), "exit status 1") {
-		fmt.Println(err.Error())
-	}
-	stdout := outbuf.String()
-	assert.Contains(stdout, "A command-line interface for the Flogo Dot IO website")
-	outbuf.Reset()
-	errbuf.Reset()
+type FDIOCommandsTestSuite struct {
+	suite.Suite
+	Command []string
 }
 
-func TestVersion(t *testing.T) {
-	fmt.Println("TestVersion")
-	assert := assert.New(t)
+func (suite *FDIOCommandsTestSuite) SetupTest() {
+	suite.Command = []string{"go", "run", "../main.go"}
+}
 
-	var outbuf, errbuf bytes.Buffer
+func (suite *FDIOCommandsTestSuite) TearDownTest() {
+	os.Remove("./init.db")
+}
 
-	// db flags set, but not toml
-	currentCmd := append(mainCommand, "--version")
-	cmd := exec.Command("go", currentCmd...)
-	cmd.Stdout = &outbuf
-	cmd.Stderr = &errbuf
+func (suite *FDIOCommandsTestSuite) TestRunMain() {
+	res, err := runner(suite.Command)
+	assert.NoError(suite.T(), err)
+	assert.Contains(suite.T(), res, "A command-line interface for the Flogo Dot IO website")
+}
 
-	err := cmd.Run()
-	if err != nil && !strings.Contains(err.Error(), "exit status 1") {
-		fmt.Println(err.Error())
-	}
-	stdout := outbuf.String()
-	assert.Contains(stdout, "You're running FDIO version 0.1.0")
-	outbuf.Reset()
-	errbuf.Reset()
+func (suite *FDIOCommandsTestSuite) TestRunVersion() {
+	args := append(suite.Command, "--version")
+	res, err := runner(args)
+	assert.NoError(suite.T(), err)
+	assert.Contains(suite.T(), res, fmt.Sprintf("You're running FDIO version %s", Version))
+}
+
+func (suite *FDIOCommandsTestSuite) TestRunInit() {
+	args := append(suite.Command, "init")
+	res, err := runner(args)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), res, "Error: required flag(s) \"db\"")
+
+	args = append(args, "--db", "./init.db")
+	res, err = runner(args)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), res, "error locating database file: stat ./init.db: no such file or directory")
+
+	os.Create("./init.db")
+	res, err = runner(args)
+	assert.NoError(suite.T(), err)
+}
+
+func (suite *FDIOCommandsTestSuite) TestRunStats() {
+	args := append(suite.Command, "stats")
+	res, err := runner(args)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), res, "Error: required flag(s) \"db\"")
+
+	args = append(args, "--db", "../test/populated.dbtest")
+	res, err = runner(args)
+	assert.NoError(suite.T(), err)
+	assert.Contains(suite.T(), res, "retgits |   1")
+}
+
+func (suite *FDIOCommandsTestSuite) TestRunQuery() {
+	args := append(suite.Command, "query")
+	res, err := runner(args)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), res, "Error: required flag(s) \"db\"")
+
+	args = append(args, "--db", "../test/populated.dbtest")
+	res, err = runner(args)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), res, "Error: required flag(s) \"query\"")
+
+	args = append(args, "--db", "../test/populated.dbtest", "--query", "select author, count(author) as num from contributions group by author order by num desc limit 5")
+	res, err = runner(args)
+	assert.NoError(suite.T(), err)
+	assert.Contains(suite.T(), res, "retgits |   1")
+}
+
+func TestCommands(t *testing.T) {
+	suite.Run(t, new(FDIOCommandsTestSuite))
+}
+
+func runner(args []string) (string, error) {
+	cmd := exec.Command(args[0], args[1:]...)
+	res, err := cmd.CombinedOutput()
+	return string(res), err
 }

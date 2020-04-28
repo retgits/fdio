@@ -81,11 +81,12 @@ func (suite *DBQueryTestSuite) TestInsertContrib() {
 		Homepage:         "https://flogo.io",
 		Name:             "awesomeness",
 		Ref:              "deprecated",
-		ShowcaseEnabled:  "no",
+		ShowcaseEnabled:  false,
 		SourceURL:        "https://github.com/retgits",
 		Title:            "AwesomeContrib",
-		UploadedOn:       time.Now(),
+		UploadedOn:       time.Now().Format("2006-01-02"),
 		Version:          "0.1.0",
+		Legacy:           true,
 	}
 	err := suite.db.InsertContribution(c)
 	assert.NoError(suite.T(), err)
@@ -99,11 +100,12 @@ func (suite *DBQueryTestSuite) TestQuery() {
 		Homepage:         "https://flogo.io",
 		Name:             "awesomeness",
 		Ref:              "deprecated",
-		ShowcaseEnabled:  "no",
+		ShowcaseEnabled:  false,
 		SourceURL:        "https://github.com/retgits",
 		Title:            "AwesomeContrib",
-		UploadedOn:       time.Now(),
+		UploadedOn:       time.Now().Format("2006-01-02"),
 		Version:          "0.1.0",
+		Legacy:           true,
 	}
 	suite.db.InsertContribution(c)
 

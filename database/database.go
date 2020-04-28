@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/olekukonko/tablewriter"
@@ -59,12 +58,13 @@ type Contribution struct {
 	ContributionType string `json:"type"`
 	SourceURL        string
 	Author           string `json:"author"`
-	UploadedOn       time.Time
-	ShowcaseEnabled  string
+	UploadedOn       string
+	ShowcaseEnabled  bool
 	Description      string `json:"description"`
 	Version          string `json:"version"`
 	Title            string `json:"title"`
 	Homepage         string `json:"homepage"`
+	Legacy           bool
 }
 
 // OpenSession creates a new reference to an SQLite database. If the file cannot be found an exception will be returned.
@@ -95,7 +95,20 @@ func MustOpenSession(file string) *Database {
 
 // Initialize creates the new database structure. This method must be called if you're starting with a brand new database.
 func (db *Database) Initialize() error {
-	return db.Exec("create table contributions(ref text, name text, contributiontype text, sourceurl text, author text, uploadedon text, showcaseenabled text, description text, version text, title text, homepage text)")
+	return db.Exec(`create table contributions(
+		ref text, 
+		name text, 
+		contributiontype text, 
+		sourceurl text, 
+		author text, 
+		uploadedon text, 
+		showcaseenabled text, 
+		description text, 
+		version text, 
+		title text, 
+		homepage text, 
+		legacy text)
+	`)
 }
 
 // Close closes the database and prevents new queries from starting. Close then waits for all queries that have started processing on the server to finish.
@@ -111,7 +124,7 @@ func (db *Database) Exec(query string) error {
 
 // InsertContribution inserts activities and triggers into the database,
 func (db *Database) InsertContribution(c Contribution) error {
-	q := fmt.Sprintf("insert into contributions(ref, name, contributiontype, sourceurl, author, uploadedon, showcaseenabled, description, version, title, homepage) values(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\")", c.Ref, c.Name, c.ContributionType, c.SourceURL, c.Author, c.UploadedOn, c.ShowcaseEnabled, c.Description, c.Version, c.Title, c.Homepage)
+	q := fmt.Sprintf("insert into contributions(ref, name, contributiontype, sourceurl, author, uploadedon, showcaseenabled, description, version, title, homepage, legacy) values(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\")", c.Ref, c.Name, c.ContributionType, c.SourceURL, c.Author, c.UploadedOn, strconv.FormatBool(c.ShowcaseEnabled), c.Description, c.Version, c.Title, c.Homepage, strconv.FormatBool(c.Legacy))
 	return db.Exec(q)
 }
 

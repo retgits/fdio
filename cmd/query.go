@@ -31,11 +31,7 @@ func init() {
 
 // runQuery is the actual execution of the command
 func runQuery(cmd *cobra.Command, args []string) {
-	// Get a database
-	db, err := database.OpenSession(dbFile)
-	if err != nil {
-		log.Fatalf("Error while connecting to the database: %s\n", err.Error())
-	}
+	db := database.MustOpenSession(databaseFile)
 
 	queryOpts := database.QueryOptions{
 		Writer:     os.Stdout,
@@ -44,8 +40,8 @@ func runQuery(cmd *cobra.Command, args []string) {
 		RowLine:    true,
 		Render:     true,
 	}
-	_, err = db.Query(queryOpts)
+	_, err := db.Query(queryOpts)
 	if err != nil {
-		log.Printf("Error while executing query: %s\n", err.Error())
+		log.Fatalf("Error while executing query: %s\n", err.Error())
 	}
 }

@@ -3,15 +3,13 @@
 package cmd
 
 import (
-	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/retgits/fdio/database"
-	"github.com/retgits/fdio/util"
+	"github.com/retgits/fdio/github"
 	"github.com/spf13/cobra"
 )
 
@@ -22,20 +20,10 @@ var crawlCmd = &cobra.Command{
 	Run:   runCrawl,
 }
 
-// Flags
-var (
-	actsType string
-	timeout  float64
-)
-
-const (
-	crawlLockFile string = ".crawl"
-)
-
 // init registers the command and flags
 func init() {
 	rootCmd.AddCommand(crawlCmd)
-	crawlCmd.Flags().StringVar(&actsType, "type", "", "The type to look for, either trigger or activity (required)")
+	crawlCmd.Flags().StringVar(&activityType, "type", "", "The type to look for: trigger, activity, or contribution (required)")
 	crawlCmd.Flags().Float64Var(&timeout, "timeout", 0, "The number of hours between now and the last repo update")
 	crawlCmd.MarkFlagRequired("type")
 }
@@ -55,32 +43,30 @@ func runCrawl(cmd *cobra.Command, args []string) {
 	}
 
 	// This app needs to connect to GitHub using a Personal Access Token
-	githubToken, set := os.LookupEnv("GHACCESSTOKEN")
+	githubToken, set := os.LookupEnv("GITHUB_ACCESS_TOKEN")
 	if !set {
-		log.Fatalf("GitHub Access Token is not set. Please set GHACCESSTOKEN before running this command\n")
+		log.Fatalf("GitHub Access Token is not set. Please set GITHUB_ACCESS_TOKEN before running this command\n")
 	}
 
-	switch strings.ToUpper(actsType) {
-	case "TRIGGER":
-		actsType = "Trigger"
-	case "ACTIVITY":
-		actsType = "Activity"
+	var contributionType github.ContributionIdentifier
+
+	switch strings.ToUpper(activityType) {
+	case github.TriggerType.String():
+		contributionType = github.TriggerType
+	case github.ActivityType.String():
+		contributionType = github.ActivityType
+	case github.ContributionType.String():
+		contributionType = github.ContributionType
 	default:
-		log.Fatalf("Unknown type: %s. Please use either trigger or activity\n", actsType)
+		log.Fatalf("Unknown type: %s. Please use either trigger or activity\n", activityType)
 	}
 
 	// Get a database
-	db, err := database.OpenSession(dbFile)
-	if err != nil {
-		log.Fatalf("Error while connecting to the database: %s\n", err.Error())
-	}
+	db := database.MustOpenSession(databaseFile)
 
-	// Prepare HTTP headers
-	httpHeader := http.Header{"Authorization": {fmt.Sprintf("token %s", githubToken)}}
-
-	err = util.Crawl(httpHeader, db, timeout, actsType)
+	err = github.Crawl(githubToken, db, timeout, contributionType)
 	if err != nil {
-		log.Fatalf("Error while crawling for %s: %s\n", actsType, err.Error())
+		log.Fatalf("Error while crawling for %s: %s\n", activityType, err.Error())
 	}
-	log.Printf("Completed crawling for %s!\n", actsType)
+	log.Printf("Completed crawling for %s!\n", activityType)
 }

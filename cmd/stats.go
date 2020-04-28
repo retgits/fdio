@@ -24,29 +24,19 @@ func init() {
 
 // runGetStats is the actual execution of the command
 func runGetStats(cmd *cobra.Command, args []string) {
-	// Get a database
-	db, err := database.OpenSession(dbFile)
-	if err != nil {
-		log.Fatalf("Error while connecting to the database: %s\n", err.Error())
-	}
+	db := database.MustOpenSession(databaseFile)
 
-	// Get the top 5 authors
-	queryOpts := database.QueryOptions{
-		Writer:     os.Stdout,
-		Query:      "select author, count(author) as num from acts group by author order by num desc limit 5",
-		MergeCells: true,
-		RowLine:    true,
-		Render:     true,
-	}
-	_, err = db.Query(queryOpts)
-	if err != nil {
-		log.Printf("Error while executing query: %s\n", err.Error())
-	}
-
-	// Get the item types
-	queryOpts.Query = "select type, count(type) as num from acts group by type"
-	_, err = db.Query(queryOpts)
-	if err != nil {
-		log.Printf("Error while executing query: %s\n", err.Error())
+	for _, q := range statisticsQueries {
+		queryOpts := database.QueryOptions{
+			Writer:     os.Stdout,
+			Query:      q,
+			MergeCells: true,
+			RowLine:    true,
+			Render:     true,
+		}
+		_, err := db.Query(queryOpts)
+		if err != nil {
+			log.Fatalf("Error while executing query: %s\n", err.Error())
+		}
 	}
 }

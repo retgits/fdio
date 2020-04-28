@@ -17,16 +17,27 @@ var rootCmd = &cobra.Command{
 A command-line interface for the Flogo Dot IO website`,
 }
 
-// Variables used in multiple flags
+// Flags
 var (
-	dbFile    string
-	tomlFile  string
-	overwrite bool
+	databaseFile string
+	activityType string
+	timeout      float64
+)
+
+// Queries
+var (
+	statisticsQueries = []string{
+		"select author, count(author) as num from contributions group by author order by num desc limit 5",
+		"select type, count(type) as num from contributions group by type",
+	}
 )
 
 const (
-	tomlItemKey = "items"
-	version     = "0.1.2"
+	// Name of the lock file to prevent two instances of FDIO accessing resources at the same time
+	crawlLockFile = ".crawl"
+
+	// Version number of FDIO
+	Version = "0.1.2"
 )
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -39,8 +50,8 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&dbFile, "db", "", "The path to the database (required)")
+	rootCmd.PersistentFlags().StringVar(&databaseFile, "db", "", "The path to the database (required)")
 	rootCmd.MarkPersistentFlagRequired("db")
-	rootCmd.Version = version
+	rootCmd.Version = Version
 	rootCmd.SetVersionTemplate("\nYou're running FDIO version {{.Version}}\n\n")
 }
