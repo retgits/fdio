@@ -28,8 +28,8 @@ const (
 func (c ContributionIdentifier) String() string {
 	return [...]string{
 		"ACTIVITY",
-		"TRIGGER",
 		"CONTRIBUTION",
+		"TRIGGER",
 	}[c]
 }
 
@@ -55,7 +55,7 @@ func Crawl(token string, db *database.Database, timeout float64, ci Contribution
 	}
 
 	var maxPages int
-	i := 0
+	i := 1
 
 	for {
 		// Prepare URL
@@ -118,6 +118,10 @@ func Crawl(token string, db *database.Database, timeout float64, ci Contribution
 		}
 
 		// Check the last update time
+		if len(res.Items) == 0 {
+			return nil
+		}
+
 		lastActivity := res.Items[len(res.Items)-1]
 		duration, err := repoLastUpdated(lastActivity.Repository.FullName)
 		if err != nil {
@@ -127,7 +131,7 @@ func Crawl(token string, db *database.Database, timeout float64, ci Contribution
 		// If update is larger than timeout it means the last update to the last checked
 		// repository was longer than the timeout we set. In that case we don't need to
 		// scan any further
-		if duration > timeout {
+		if duration > timeout && timeout != -1 {
 			log.Printf("Maximum timeout reached. Last repo update was %v hours\n", duration)
 			return nil
 		}

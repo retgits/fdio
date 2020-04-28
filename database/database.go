@@ -125,7 +125,7 @@ func (db *Database) Exec(query string) error {
 
 // UpdateContribution updates the data for activities and triggers in the database,
 func (db *Database) UpdateContribution(c Contribution) error {
-	q := fmt.Sprintf("update contributions set ref=\"%s\", name=\"%s\", contributiontype=\"%s\", author=\"%s\", uploadedon=\"%s\", showcaseenabled=\"%s\", description=\"%s\", version=\"%s\", title=\"%s\", homepage=\"%s\", legacy=\"%s\" where sourceurl=\"%s\")", c.Ref, c.Name, c.ContributionType, c.Author, c.UploadedOn, strconv.FormatBool(c.ShowcaseEnabled), c.Description, c.Version, c.Title, c.Homepage, strconv.FormatBool(c.Legacy), c.SourceURL)
+	q := fmt.Sprintf("update contributions set ref=\"%s\", name=\"%s\", contributiontype=\"%s\", author=\"%s\", uploadedon=\"%s\", showcaseenabled=\"%s\", description=\"%s\", version=\"%s\", title=\"%s\", homepage=\"%s\", legacy=\"%s\" where sourceurl=\"%s\"", c.Ref, c.Name, c.ContributionType, c.Author, c.UploadedOn, strconv.FormatBool(c.ShowcaseEnabled), c.Description, c.Version, c.Title, c.Homepage, strconv.FormatBool(c.Legacy), c.SourceURL)
 	return db.Exec(q)
 }
 

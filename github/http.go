@@ -19,6 +19,8 @@ type GithubData struct {
 }
 
 func getSearchResults(url string, token string) (GithubData, error) {
+	log.Printf("sending request to: %s", url)
+
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return GithubData{}, fmt.Errorf("error creating newrequest: %s", err.Error())
@@ -41,8 +43,6 @@ func getSearchResults(url string, token string) (GithubData, error) {
 	if res.StatusCode < 200 || res.StatusCode > 299 {
 		return GithubData{}, fmt.Errorf("github respondes with http status %d: %s", res.StatusCode, res.Status)
 	}
-
-	log.Println(string(body))
 
 	githubSearchData, err := UnmarshalGithubSearchData(body)
 	if err != nil {
