@@ -102,8 +102,16 @@ func Crawl(token string, db *database.Database, timeout float64, ci Contribution
 
 			err = db.InsertContribution(contribution)
 			if err != nil {
-				log.Printf("unable to add %s to database: %s", repo.Repository.FullName, err.Error())
-				continue
+				if strings.Contains(err.Error(), "UNIQUE constraint failed: contributions.sourceurl") {
+					err = db.UpdateContribution(contribution)
+					if err != nil {
+						log.Printf("unable to update data for %s (%s): %s", activity.Title, repo.Repository.FullName, err.Error())
+						continue
+					}
+				} else {
+					log.Printf("unable to add %s (%s) to database: %s", activity.Title, repo.Repository.FullName, err.Error())
+					continue
+				}
 			}
 
 			log.Printf("added %s (%s) to database", activity.Title, repo.Repository.FullName)

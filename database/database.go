@@ -94,12 +94,13 @@ func MustOpenSession(file string) *Database {
 }
 
 // Initialize creates the new database structure. This method must be called if you're starting with a brand new database.
+// The sourceurl (github url) is the primary key as there can be only one activity in a location.
 func (db *Database) Initialize() error {
 	return db.Exec(`create table contributions(
 		ref text, 
 		name text, 
 		contributiontype text, 
-		sourceurl text, 
+		sourceurl text not null primary key, 
 		author text, 
 		uploadedon text, 
 		showcaseenabled text, 
@@ -122,6 +123,12 @@ func (db *Database) Exec(query string) error {
 	return err
 }
 
+// UpdateContribution updates the data for activities and triggers in the database,
+func (db *Database) UpdateContribution(c Contribution) error {
+	q := fmt.Sprintf("update contributions set ref=\"%s\", name=\"%s\", contributiontype=\"%s\", author=\"%s\", uploadedon=\"%s\", showcaseenabled=\"%s\", description=\"%s\", version=\"%s\", title=\"%s\", homepage=\"%s\", legacy=\"%s\" where sourceurl=\"%s\")", c.Ref, c.Name, c.ContributionType, c.Author, c.UploadedOn, strconv.FormatBool(c.ShowcaseEnabled), c.Description, c.Version, c.Title, c.Homepage, strconv.FormatBool(c.Legacy), c.SourceURL)
+	return db.Exec(q)
+}
+
 // InsertContribution inserts activities and triggers into the database,
 func (db *Database) InsertContribution(c Contribution) error {
 	q := fmt.Sprintf("insert into contributions(ref, name, contributiontype, sourceurl, author, uploadedon, showcaseenabled, description, version, title, homepage, legacy) values(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\")", c.Ref, c.Name, c.ContributionType, c.SourceURL, c.Author, c.UploadedOn, strconv.FormatBool(c.ShowcaseEnabled), c.Description, c.Version, c.Title, c.Homepage, strconv.FormatBool(c.Legacy))
@@ -131,13 +138,6 @@ func (db *Database) InsertContribution(c Contribution) error {
 // Query run a query on the database and prints the result in a table.
 func (db *Database) Query(opts QueryOptions) (QueryResponse, error) {
 	queryResponse := QueryResponse{}
-
-	// Open a connection to the database
-	//dbase, err := sqlx.Open("sqlite3", db.File)
-	//if err != nil {
-	//	return queryResponse, fmt.Errorf("error while opening connection to database: %s", err.Error())
-	//}
-	//defer dbase.Close()
 
 	// Execute the query
 	rows, err := db.DB.Queryx(opts.Query)
